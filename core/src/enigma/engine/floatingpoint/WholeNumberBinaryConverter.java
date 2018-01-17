@@ -1,20 +1,17 @@
 package enigma.engine.floatingpoint;
 
-import java.util.ArrayList;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import enigma.engine.DrawableString;
 
 public class WholeNumberBinaryConverter implements GenericLearnModule
 {
-	private ArrayList<DrawableString> numerators = new ArrayList<DrawableString>(10); //the numbers inside of the division bar
-	private ArrayList<DrawableString> denominators = new ArrayList<DrawableString>(10);
-	private ArrayList<Sprite> divisorSymbols = new ArrayList<Sprite>(10); //the actual sideways L division symbol
-	private ArrayList<DrawableString> answers = new ArrayList<DrawableString>(10); //answer above division symbol
+	//private ArrayList<DrawableString> numerators = new ArrayList<DrawableString>(10); //the numbers inside of the division bar
+	//private ArrayList<DrawableString> denominators = new ArrayList<DrawableString>(10);
+	//private ArrayList<Sprite> divisorSymbols = new ArrayList<Sprite>(10); //the actual sideways L division symbol
+	//private ArrayList<DrawableString> answers = new ArrayList<DrawableString>(10); //answer above division symbol
 	private DrawableString typingAnswer = new DrawableString(""); //this is what gets populated when the user types
 	
 	boolean bActive = true;

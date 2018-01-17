@@ -14,7 +14,7 @@ public class FP3FractionalNumberBinaryModule extends FPComponentModule
 	/** a vector to hold converted touch coordinates into game world coordinates */
 	private Vector3 convVect = new Vector3(0, 0, 0);
 	private boolean devMode = true;
-	private Float fractionalPortion;
+	//private Float fractionalPortion;
 	private DrawableString fractionalPortionDrawableString = new DrawableString("");
 	private boolean bShouldDrawFractionalString = true;
 
