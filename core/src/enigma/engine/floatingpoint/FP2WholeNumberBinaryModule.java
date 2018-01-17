@@ -65,7 +65,7 @@ public class FP2WholeNumberBinaryModule extends FPComponentModule
 
 	void handleStateChanged(int newCurrentInstruction)
 	{
-		boolean updateCurrentInstruction = true;
+		//boolean updateCurrentInstruction = true;
 		if (newCurrentInstruction == showWholeNumberInstructionIndex)
 		{
 			if (wholeNumberDrawString != null)
