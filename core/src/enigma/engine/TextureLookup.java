@@ -9,7 +9,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 public class TextureLookup {
-
+	private static boolean blackColorTheme = true;
 	private static ArrayList<Texture> allTextures = new ArrayList<Texture>();
 	public static Texture kButton;
 	public static Texture kButtonPressed;
@@ -29,6 +29,8 @@ public class TextureLookup {
 	// Warning: be careful when using these colors; properly copy them without changing reference
 	public static Color foregroundColor = Color.WHITE;
 	public static Color backgroundColor = Color.BLACK;
+	public static Color redBlackBg = Color.RED;
+	public static Color redWhiteBg = Color.SCARLET;
 
 	public static void initTextures() {
 		// check if textures have already been initialized
@@ -95,6 +97,9 @@ public class TextureLookup {
 		backgroundColor = foregroundColor;
 		foregroundColor = temp;
 		swapWhiteFont();
+		
+		//swap theme flag
+		blackColorTheme = !blackColorTheme;
 	}
 	
 	private static boolean whiteFont = true;
@@ -105,6 +110,14 @@ public class TextureLookup {
 		}else {
 			whiteFont = true;
 			whiteBMFont.setColor(Color.WHITE);
+		}
+	}
+
+	public static Color getRedColor() {
+		if(blackColorTheme) {
+			return redBlackBg;
+		}else {
+			return redWhiteBg;
 		}
 	}
 	
