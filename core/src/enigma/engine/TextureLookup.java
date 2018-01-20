@@ -29,8 +29,10 @@ public class TextureLookup {
 	// Warning: be careful when using these colors; properly copy them without changing reference
 	public static Color foregroundColor = Color.WHITE;
 	public static Color backgroundColor = Color.BLACK;
-	public static Color redBlackBg = Color.RED;
-	public static Color redWhiteBg = Color.SCARLET;
+	private static Color redBlackBg = Color.RED;
+	private static Color redWhiteBg = Color.SCARLET;
+	private static Color blueBlackBg = Color.BLUE;
+	private static Color blueWhiteBg = Color.NAVY;
 
 	public static void initTextures() {
 		// check if textures have already been initialized
@@ -118,6 +120,14 @@ public class TextureLookup {
 			return redBlackBg;
 		}else {
 			return redWhiteBg;
+		}
+	}
+
+	public static Color getBlueColor() {
+		if(blackColorTheme) {
+			return blueBlackBg;
+		}else {
+			return blueWhiteBg;
 		}
 	}
 	

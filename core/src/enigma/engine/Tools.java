@@ -64,4 +64,8 @@ public class Tools {
 		// determine if none of the points collided
 		return bottomLeftCollides || bottomRightCollides || topLeftCollides || topRightCollides;
 	}
+	
+	public static float convertSpeedTo60FPSValue(float rawSpeed) {
+		return 60f * rawSpeed;
+	}
 }

@@ -8,7 +8,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
-import com.badlogic.gdx.math.Vector3;
 
 import enigma.engine.CourseModule;
 import enigma.engine.Draggable;
@@ -41,12 +40,13 @@ public class SelectionSortModule extends CourseModule {
 		numElements = rng.nextInt(3) + 7;
 
 		array = new SortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10);
-		array.centerOnPoint(Gdx.graphics.getWidth() * .5f, Gdx.graphics.getHeight() * .4f);
+		array.centerOnPoint(Gdx.graphics.getWidth() * .5f, Gdx.graphics.getHeight() * .2f);
 	}
 
 	@Override
 	public void logic() {
 		super.logic();
+		array.logic();
 	}
 
 	@Override
