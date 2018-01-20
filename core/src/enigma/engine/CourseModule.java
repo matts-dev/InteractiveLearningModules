@@ -14,6 +14,7 @@ public abstract class CourseModule {
 	protected int moduleIter = 0;
 	protected CourseModule currentSubModule;
 	protected OrthographicCamera camera;
+	protected boolean devMode = true;
 
 	public CourseModule(OrthographicCamera camera) {
 		this.camera = camera;
@@ -44,7 +45,6 @@ public abstract class CourseModule {
 		if (moduleIter == subModules.size() - 1) {
 			return;
 		}
-		// currentSubModule.dispose();
 
 		// moduleIter = (moduleIter + 1) % subModules.size();
 		moduleIter += 1;
@@ -58,7 +58,6 @@ public abstract class CourseModule {
 			return;
 		}
 
-		// currentSubModule.dispose();
 		// moduleIter = ((moduleIter - 1) + subModules.size()) % subModules.size();
 		moduleIter -= 1;
 		currentSubModule = subModules.get(moduleIter);
