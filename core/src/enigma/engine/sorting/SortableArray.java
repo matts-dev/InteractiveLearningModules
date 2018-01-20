@@ -3,6 +3,7 @@ package enigma.engine.sorting;
 import java.util.ArrayList;
 import java.util.Random;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -11,13 +12,12 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 import enigma.engine.Draggable;
-import enigma.engine.Entity;
 import enigma.engine.Positionable;
 import enigma.engine.TextureLookup;
 import enigma.engine.Tools;
 import enigma.engine.Touchable;
 
-public class SortableArray implements Entity, Positionable, Touchable {
+public class SortableArray extends Positionable implements Touchable {
 	public static final float MAX_HEIGHT = 300f;
 	protected ShapeRenderer sr;
 	protected Rectangle boundBox;
@@ -25,16 +25,19 @@ public class SortableArray implements Entity, Positionable, Touchable {
 	protected float spacingWidth;
 	protected Vector2 touchOffset = new Vector2();
 	protected ArrayList<VisualColumn> elements;
-	protected int minimumElementValue = 1;
 	
-	//utility for converting touches
+	//draw by order of height, this means that smaller blocks will draw in front and can be seen
+	protected ArrayList<Vector2> arrayIndexPositions;
+	protected int minimumElementValue = 1;
+
+	// utility for converting touches
 	private Vector3 convertedTouchVect = new Vector3(0, 0, 0);
 	private Draggable dragTarget = null;
 
 	public SortableArray(float x, float y, float elementWidth, int numElements, int maxElementValue) {
 		float initWidth = elementWidth * numElements;
 		this.elementWidth = elementWidth;
-		this.spacingWidth = elementWidth * 0.1f;
+		this.spacingWidth = elementWidth;
 
 		sr = TextureLookup.shapeRenderer;
 		boundBox = new Rectangle(x, y, initWidth, SortableArray.MAX_HEIGHT);
@@ -47,28 +50,52 @@ public class SortableArray implements Entity, Positionable, Touchable {
 		Random rng = new Random();
 
 		elements = new ArrayList<VisualColumn>(numElements);
+		arrayIndexPositions = new ArrayList<Vector2>(numElements);
 
 		for (int idx = 0; idx < numElements; ++idx) {
 			int elementValue = rng.nextInt(maxElementValue + 1 - minimumElementValue) + minimumElementValue;
 			VisualColumn vc = new VisualColumn(0, 0, elementValue, maxElementValue, MAX_HEIGHT, elementWidth);
 			vc.setPosition(getX() + idx * (elementWidth + spacingWidth), getY());
 			elements.add(vc);
+
+			Vector2 arraySlot = new Vector2(vc.getX(), vc.getY());
+			arrayIndexPositions.add(arraySlot);
 		}
+
+		
 	}
 
 	@Override
 	public void setPosition(float x, float y) {
-		boundBox.setPosition(x, y);
+		float translateX = x - getX();
+		float translateY = y - getY();
+
 		for (VisualColumn element : elements) {
-			element.translate(x - getX(), y - getY());
+			element.translate(translateX, translateY);
 		}
+
+		for (Vector2 loc : arrayIndexPositions) {
+			float oldX = loc.x;
+			float oldY = loc.y;
+
+			loc.x = oldX + translateX;
+			loc.y = oldY + translateY;
+		}
+		boundBox.setPosition(x, y);
 	}
 
 	@Override
-	public void translate(float x, float y) {
-		boundBox.setPosition(boundBox.getX() + x, boundBox.getY() + y);
+	public void translate(float transX, float transY) {
+		boundBox.setPosition(boundBox.getX() + transX, boundBox.getY() + transY);
 		for (VisualColumn element : elements) {
-			element.translate(x, y);
+			element.translate(transX, transY);
+		}
+		for (Vector2 loc : arrayIndexPositions) {
+			float oldX = loc.x;
+			float oldY = loc.y;
+
+			loc.x = oldX + transX;
+			loc.y = oldY + transY;
 		}
 	}
 
@@ -82,17 +109,41 @@ public class SortableArray implements Entity, Positionable, Touchable {
 		return boundBox.getY();
 	}
 
+	private static ArrayList<VisualColumn> interpolating = new ArrayList<VisualColumn>();
 	@Override
 	public void draw(SpriteBatch batch) {
+		interpolating.clear();
 		for (VisualColumn element : elements) {
 			element.draw(batch);
+			if (element.isInterpolating()) {
+				interpolating.add(element);
+			}
+		}
+		
+		//draw interpolating elements overtop of the others.
+		for (VisualColumn element : interpolating) {
+			element.draw(batch);
+		}
+		
+		//if the target is being dragged, then draw overtop of it to ensure that it is always seen regardless of height (ie draw order)
+		if(dragTarget != null) {
+			Color cachedColor = sr.getColor();
+			float r = cachedColor.r;
+			float g = cachedColor.g;
+			float b = cachedColor.b;
+			float a = cachedColor.a;
+
+			sr.setColor(TextureLookup.getRedColor());
+			dragTarget.draw(batch);
+			sr.setColor(r, g, b, a);
 		}
 	}
 
 	@Override
 	public void logic() {
-		// TODO Auto-generated method stub
-
+		for (VisualColumn element : elements) {
+			element.logic();
+		}
 	}
 
 	@Override
@@ -111,7 +162,7 @@ public class SortableArray implements Entity, Positionable, Touchable {
 	public boolean touchDown(int screenX, int screenY, int pointer, int button, OrthographicCamera camera) {
 		boolean handled = false;
 		Tools.convertMousePointsIntoGameCoordinates(camera, convertedTouchVect);
-		
+
 		for (VisualColumn element : elements) {
 			if (element.contains(convertedTouchVect.x, convertedTouchVect.y)) {
 				dragTarget = element;
@@ -128,9 +179,28 @@ public class SortableArray implements Entity, Positionable, Touchable {
 	public boolean touchUp(int screenX, int screenY, int pointer, int button, OrthographicCamera camera) {
 		boolean handled = false;
 		Tools.convertMousePointsIntoGameCoordinates(camera, convertedTouchVect);
-		
+
 		if (dragTarget != null) {
 			dragTarget.endedDragging(convertedTouchVect.x, convertedTouchVect.y);
+
+			VisualColumn swappedWith = attemptSwapWithOtherElement(dragTarget);
+			int idx = getIndex(dragTarget);
+			if (idx != -1) {
+				Vector2 loc = arrayIndexPositions.get(idx);
+				dragTarget.setInterpolatePoint(loc.x, loc.y);
+				VisualColumn casted = (VisualColumn) dragTarget;
+				if(casted != null) {
+					casted.setOverrideColor(TextureLookup.getRedColor());
+				}
+			}
+			if (swappedWith != null) {
+				idx = getIndex(swappedWith);
+				if (idx != -1) {
+					Vector2 loc = arrayIndexPositions.get(idx);
+					swappedWith.setInterpolatePoint(loc.x, loc.y);
+					swappedWith.setOverrideColor(TextureLookup.getBlueColor());
+				}
+			}
 			handled = true;
 		}
 		dragTarget = null;
@@ -141,12 +211,49 @@ public class SortableArray implements Entity, Positionable, Touchable {
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer, OrthographicCamera camera) {
 		boolean handled = false;
-		
+
 		Tools.convertMousePointsIntoGameCoordinates(camera, convertedTouchVect);
 		if (dragTarget != null) {
 			dragTarget.draggedToPoint(convertedTouchVect.x, convertedTouchVect.y);
 		}
 
 		return handled;
+	}
+
+	public VisualColumn attemptSwapWithOtherElement(Draggable draggedElement) {
+		VisualColumn dragged = (VisualColumn) draggedElement;
+
+		if (dragged == null) {
+			// cast failed, wrong type
+			return null;
+		}
+
+		for (int idx = 0; idx < elements.size(); ++idx) {
+			VisualColumn currEle = elements.get(idx);
+			if (dragged != currEle) {
+				if (dragged.colidingWith(currEle)) {
+					int draggedIndex = getIndex(dragged);
+					int elementIndex = getIndex(currEle);
+					if (draggedIndex != -1 && elementIndex != -1) {
+						VisualColumn temp = elements.get(draggedIndex);
+						elements.set(draggedIndex, currEle);
+						elements.set(elementIndex, temp);
+						return currEle;
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
+	private int getIndex(Draggable element) {
+		for (int idx = 0; idx < elements.size(); ++idx) {
+			VisualColumn current = elements.get(idx);
+			if (current == element) {
+				return idx;
+			}
+		}
+		return -1;
 	}
 }

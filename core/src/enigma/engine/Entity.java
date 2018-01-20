@@ -2,8 +2,8 @@ package enigma.engine;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-public interface Entity {
-	public void draw(SpriteBatch batch);
-	public void logic();
-	public void dispose();
+public abstract class Entity {
+	public abstract void draw(SpriteBatch batch);
+	public abstract void logic();
+	public abstract void dispose();
 }

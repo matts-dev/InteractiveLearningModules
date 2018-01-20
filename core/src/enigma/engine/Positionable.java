@@ -1,9 +1,9 @@
 package enigma.engine;
 
-public interface Positionable {
-	public void setPosition(float x, float y);
-	public void translate(float x, float y);
+public abstract class Positionable extends Entity {
+	public abstract void setPosition(float x, float y);
+	public abstract void translate(float x, float y);
 	
-	public float getX();
-	public float getY();
+	public abstract float getX();
+	public abstract float getY();
 }
