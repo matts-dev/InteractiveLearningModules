@@ -16,6 +16,8 @@ public class TextureLookup {
 	public static Texture buttonBlack;
 	public static Texture buttonGrey;
 	public static Texture lambdaTexture;
+	public static Texture arrowUpLarge;
+	public static Texture arrowUpSmall;
 
 	public static BitmapFont whiteBMFont;
 	public static BitmapFont yellowBMFont;
@@ -33,6 +35,8 @@ public class TextureLookup {
 	private static Color redWhiteBg = Color.SCARLET;
 	private static Color blueBlackBg = Color.BLUE;
 	private static Color blueWhiteBg = Color.NAVY;
+	private static Color greenBlackBg = Color.GREEN;
+	private static Color greenWhiteBg = Color.OLIVE;
 
 	public static void initTextures() {
 		// check if textures have already been initialized
@@ -49,20 +53,19 @@ public class TextureLookup {
 	}
 	
 	private static void createTextures() {
-		kButton = new Texture(Gdx.files.internal("KButton.png"));
-		allTextures.add(kButton);
-
-		kButtonPressed = new Texture(Gdx.files.internal("KButtonPressed.png"));
-		allTextures.add(kButtonPressed);
-
-		lambdaTexture = new Texture(Gdx.files.internal("Lambda.png"));
-		allTextures.add(lambdaTexture);
-		
-		buttonBlack = new Texture(Gdx.files.internal("ButtonBlack.png"));
-		allTextures.add(buttonBlack);
-		
-		buttonGrey = new Texture(Gdx.files.internal("ButtonGrey.png"));
-		allTextures.add(buttonGrey);		
+		kButton = loadTexture("KButton.png");
+		kButtonPressed = loadTexture("KButtonPressed.png");
+		lambdaTexture = loadTexture("Lambda.png");
+		buttonBlack = loadTexture("ButtonBlack.png");
+		buttonGrey = loadTexture("ButtonGrey.png");
+		arrowUpLarge = loadTexture("UpArrowLargeSolid.png");
+		arrowUpSmall = loadTexture("UpArrowSolid.png");
+	}
+	
+	private static Texture loadTexture(String name) {
+		Texture texture = new Texture(Gdx.files.internal(name));
+		allTextures.add(texture);
+		return texture;
 	}
 
 	private static void createBmFonts(){
@@ -131,5 +134,12 @@ public class TextureLookup {
 		}
 	}
 	
+	public static Color getGreenColor() {
+		if(blackColorTheme) {
+			return greenBlackBg;
+		}else {
+			return greenWhiteBg;
+		}
+	}
 	
 }
