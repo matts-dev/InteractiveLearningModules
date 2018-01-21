@@ -9,9 +9,10 @@ import enigma.engine.TextureLookup;
 
 public class InsertionSortableArray extends SortableArray{
 	
-	public InsertionSortableArray(float x, float y, float elementWidth, int numElements, int maxElementValue) {
-		super(x, y, elementWidth, numElements, maxElementValue);
+	public InsertionSortableArray(float x, float y, float elementWidth, int numElements, int maxElementValue, int seed) {
+		super(x, y, elementWidth, numElements, maxElementValue, seed);
 		drawIterationMarker = true;
+		drawStepMarker = true;
 	}
 
 	@Override
@@ -52,6 +53,7 @@ public class InsertionSortableArray extends SortableArray{
 				setLERPToPosition(stepIndex, leftNeighbor, TextureLookup.getBlueColor());
 				setLERPToPosition(stepIndex - 1, step, TextureLookup.getRedColor());
 				stepIndex--;
+				setMarkerLERPToPosition(stepMarker, stepIndex);
 			} else {
 				stepIndex = 0;
 			}
