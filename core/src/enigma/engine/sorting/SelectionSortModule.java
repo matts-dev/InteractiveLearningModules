@@ -39,7 +39,11 @@ public class SelectionSortModule extends CourseModule {
 		// randomly chose between 7-9 elements
 		numElements = rng.nextInt(3) + 7;
 
-		array = new SortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10);
+		createNewArray();
+	}
+
+	private void createNewArray() {
+		array = new InsertionSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10);
 		array.centerOnPoint(Gdx.graphics.getWidth() * .5f, Gdx.graphics.getHeight() * .2f);
 	}
 
@@ -71,6 +75,9 @@ public class SelectionSortModule extends CourseModule {
 
 			}
 		}
+		if (Gdx.input.isKeyJustPressed(Input.Keys.N)) {
+			createNewArray();
+		}
 
 	}
 
@@ -78,9 +85,12 @@ public class SelectionSortModule extends CourseModule {
 	public void draw(SpriteBatch batch) {
 		// draw any sub modules (super call)
 		super.draw(batch);
-
+		
 		boolean batchWasDrawing = false;
 		if (batch.isDrawing()) {
+			array.drawPreSprites(batch);
+			
+			
 			// shape rendering cannot begin while batch isDrawing.
 			batch.end();
 			// flag that batch should start back after drawing of columns.

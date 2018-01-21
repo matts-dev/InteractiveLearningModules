@@ -166,4 +166,8 @@ public class VisualColumn extends Draggable {
 	public boolean isInterpolating() {
 		return interpolateToPoint;
 	}
+
+	public int getValue() {
+		return value;
+	}
 }

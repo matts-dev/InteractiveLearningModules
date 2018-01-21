@@ -5,6 +5,7 @@ import java.util.Random;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
@@ -25,6 +26,13 @@ public class SortableArray extends Positionable implements Touchable {
 	protected float spacingWidth;
 	protected Vector2 touchOffset = new Vector2();
 	protected ArrayList<VisualColumn> elements;
+	protected ArrayList<VisualColumn> originalOrderingElements;
+	
+	//Marks the current iteration
+	protected boolean drawIterationMarker = false;
+	protected Sprite iterationMarker;
+	protected int iterationCount = 0;
+	protected int stepIndex = 0;
 	
 	//draw by order of height, this means that smaller blocks will draw in front and can be seen
 	protected ArrayList<Vector2> arrayIndexPositions;
@@ -41,8 +49,15 @@ public class SortableArray extends Positionable implements Touchable {
 
 		sr = TextureLookup.shapeRenderer;
 		boundBox = new Rectangle(x, y, initWidth, SortableArray.MAX_HEIGHT);
+		
+		iterationMarker = new Sprite(TextureLookup.arrowUpSmall);
+		iterationMarker.setColor(Color.DARK_GRAY);
+		iterationMarker.setSize(elementWidth, iterationMarker.getHeight());
 
 		generateElements(numElements, maxElementValue);
+		
+		//positional setup
+		setIterationMarkerToPosition(0);
 		setPosition(x, y);
 	}
 
@@ -50,6 +65,7 @@ public class SortableArray extends Positionable implements Touchable {
 		Random rng = new Random();
 
 		elements = new ArrayList<VisualColumn>(numElements);
+		originalOrderingElements = new ArrayList<VisualColumn>(numElements);
 		arrayIndexPositions = new ArrayList<Vector2>(numElements);
 
 		for (int idx = 0; idx < numElements; ++idx) {
@@ -57,6 +73,7 @@ public class SortableArray extends Positionable implements Touchable {
 			VisualColumn vc = new VisualColumn(0, 0, elementValue, maxElementValue, MAX_HEIGHT, elementWidth);
 			vc.setPosition(getX() + idx * (elementWidth + spacingWidth), getY());
 			elements.add(vc);
+			originalOrderingElements.add(vc);
 
 			Vector2 arraySlot = new Vector2(vc.getX(), vc.getY());
 			arrayIndexPositions.add(arraySlot);
@@ -82,6 +99,7 @@ public class SortableArray extends Positionable implements Touchable {
 			loc.y = oldY + translateY;
 		}
 		boundBox.setPosition(x, y);
+		setIterationMarkerToPosition(iterationCount);
 	}
 
 	@Override
@@ -138,6 +156,11 @@ public class SortableArray extends Positionable implements Touchable {
 			sr.setColor(r, g, b, a);
 		}
 	}
+	
+	public void drawPreSprites(SpriteBatch batch) {
+		if(drawIterationMarker)
+			iterationMarker.draw(batch);
+	}
 
 	@Override
 	public void logic() {
@@ -156,6 +179,7 @@ public class SortableArray extends Positionable implements Touchable {
 		setPosition(x, y);
 		float width = elements.size() * (elementWidth + spacingWidth);
 		this.translate(-width * 0.5f, 0);
+		setIterationMarkerToPosition(iterationCount);
 	}
 
 	@Override
@@ -186,19 +210,12 @@ public class SortableArray extends Positionable implements Touchable {
 			VisualColumn swappedWith = attemptSwapWithOtherElement(dragTarget);
 			int idx = getIndex(dragTarget);
 			if (idx != -1) {
-				Vector2 loc = arrayIndexPositions.get(idx);
-				dragTarget.setInterpolatePoint(loc.x, loc.y);
-				VisualColumn casted = (VisualColumn) dragTarget;
-				if(casted != null) {
-					casted.setOverrideColor(TextureLookup.getRedColor());
-				}
+				setLERPToPosition(idx, dragTarget, TextureLookup.getRedColor());
 			}
 			if (swappedWith != null) {
 				idx = getIndex(swappedWith);
 				if (idx != -1) {
-					Vector2 loc = arrayIndexPositions.get(idx);
-					swappedWith.setInterpolatePoint(loc.x, loc.y);
-					swappedWith.setOverrideColor(TextureLookup.getBlueColor());
+					setLERPToPosition(idx, swappedWith, TextureLookup.getBlueColor());
 				}
 			}
 			handled = true;
@@ -206,6 +223,15 @@ public class SortableArray extends Positionable implements Touchable {
 		dragTarget = null;
 
 		return handled;
+	}
+
+	protected void setLERPToPosition(int idxOfPosition, Draggable interpolatingItem, Color color) {
+		Vector2 loc = arrayIndexPositions.get(idxOfPosition);
+		interpolatingItem.setInterpolatePoint(loc.x, loc.y);
+		VisualColumn casted = (VisualColumn) interpolatingItem;
+		if(casted != null) {
+			casted.setOverrideColor(color);
+		}
 	}
 
 	@Override
@@ -232,18 +258,32 @@ public class SortableArray extends Positionable implements Touchable {
 			VisualColumn currEle = elements.get(idx);
 			if (dragged != currEle) {
 				if (dragged.colidingWith(currEle)) {
-					int draggedIndex = getIndex(dragged);
-					int elementIndex = getIndex(currEle);
-					if (draggedIndex != -1 && elementIndex != -1) {
-						VisualColumn temp = elements.get(draggedIndex);
-						elements.set(draggedIndex, currEle);
-						elements.set(elementIndex, temp);
-						return currEle;
-					}
+					VisualColumn swappedElement = forceSwap(dragged, currEle);
+					return swappedElement;
+//					int draggedIndex = getIndex(dragged);
+//					int elementIndex = getIndex(currEle);
+//					if (draggedIndex != -1 && elementIndex != -1) {
+//						VisualColumn temp = elements.get(draggedIndex);
+//						elements.set(draggedIndex, currEle);
+//						elements.set(elementIndex, temp);
+//						return currEle;
+//					}
 				}
 			}
 		}
 
+		return null;
+	}
+	
+	protected VisualColumn forceSwap(VisualColumn movingElement, VisualColumn displacedElement) {
+		int fromIndex = getIndex(movingElement);
+		int toIndex = getIndex(displacedElement);
+		if (fromIndex != -1 && toIndex != -1) {
+			VisualColumn temp = elements.get(fromIndex);
+			elements.set(fromIndex, displacedElement);
+			elements.set(toIndex, temp);
+			return displacedElement;
+		}
 		return null;
 	}
 
@@ -256,4 +296,39 @@ public class SortableArray extends Positionable implements Touchable {
 		}
 		return -1;
 	}
+	
+	//----------------------------- Solving Methods -------------------
+	protected void setIterationMarkerToPosition(int idx) {
+		if(iterationCount < elements.size()) {
+			Vector2 loc = arrayIndexPositions.get(idx);
+			iterationMarker.setPosition(loc.x, loc.y - iterationMarker.getHeight() * 1.5f);
+		}
+	}
+	
+	public void nextSolveStep() {
+		if(stepIndexComplete()) {
+			incrementIteration();
+		} 
+		
+		if(!solveCompleted()) {
+			
+		}
+	}
+
+	private void incrementIteration() {
+		iterationCount += 1;
+		stepIndex = iterationCount;
+		
+		setIterationMarkerToPosition(iterationCount);
+	}
+
+	private boolean solveCompleted() {
+		return false;
+	}
+
+	protected boolean stepIndexComplete() {
+		return false;
+	}
+	
+	//----------------------------- Solving Methods -------------------
 }
