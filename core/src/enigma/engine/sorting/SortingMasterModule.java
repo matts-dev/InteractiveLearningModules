@@ -16,7 +16,7 @@ public class SortingMasterModule extends CourseModule {
 	 */
 	public SortingMasterModule(OrthographicCamera camera) {
 		super(camera);
-		subModules.add(new SelectionSortModule(camera));
+		subModules.add(new SortModule(camera));
 		loadCurrentModule();
 	}
 

@@ -13,7 +13,7 @@ import enigma.engine.CourseModule;
 import enigma.engine.Draggable;
 import enigma.engine.TextureLookup;
 
-public class SelectionSortModule extends CourseModule {
+public class SortModule extends CourseModule {
 	/** a vector to hold converted touch coordinates into game world coordinates */
 	//private Vector3 convertedTouchVect = new Vector3(0, 0, 0);
 	private boolean devMode = true;
@@ -24,6 +24,7 @@ public class SelectionSortModule extends CourseModule {
 
 	private float elementWidth = 30;
 	private int numElements;
+	private Random rng;
 
 	/**
 	 * Constructor
@@ -31,10 +32,11 @@ public class SelectionSortModule extends CourseModule {
 	 * @param camera
 	 *            the Orthographic camera. This is used to convert points
 	 */
-	public SelectionSortModule(OrthographicCamera camera) {
+	public SortModule(OrthographicCamera camera) {
 		super(camera);
 		sr = TextureLookup.shapeRenderer;
-		Random rng = new Random();
+		rng = new Random();
+		//rng = new Random(33); set seed for all generation by uncommenting this line. 
 
 		// randomly chose between 7-9 elements
 		numElements = rng.nextInt(3) + 7;
@@ -43,7 +45,7 @@ public class SelectionSortModule extends CourseModule {
 	}
 
 	private void createNewArray() {
-		array = new InsertionSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10);
+		array = new InsertionSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10, rng.nextInt());
 		array.centerOnPoint(Gdx.graphics.getWidth() * .5f, Gdx.graphics.getHeight() * .2f);
 	}
 

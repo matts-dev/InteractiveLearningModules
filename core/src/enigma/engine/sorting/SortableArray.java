@@ -5,7 +5,6 @@ import java.util.Random;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
@@ -17,9 +16,19 @@ import enigma.engine.Positionable;
 import enigma.engine.TextureLookup;
 import enigma.engine.Tools;
 import enigma.engine.Touchable;
+import enigma.engine.utilities.LERPSprite;
 
+/**
+ * A visual representation of an array that allows swapping of elements. 
+ * 
+ * @author matts
+ * @version 1/21/2018
+ */
 public class SortableArray extends Positionable implements Touchable {
 	public static final float MAX_HEIGHT = 300f;
+	
+	protected Random rng;
+	
 	protected ShapeRenderer sr;
 	protected Rectangle boundBox;
 	protected float elementWidth;
@@ -30,8 +39,10 @@ public class SortableArray extends Positionable implements Touchable {
 	
 	//Marks the current iteration
 	protected boolean drawIterationMarker = false;
-	protected Sprite iterationMarker;
-	protected int iterationCount = 0;
+	protected boolean drawStepMarker = false;
+	protected LERPSprite iterationMarker;
+	protected LERPSprite stepMarker;
+	protected int iterationIndex = 0;
 	protected int stepIndex = 0;
 	
 	//draw by order of height, this means that smaller blocks will draw in front and can be seen
@@ -42,28 +53,55 @@ public class SortableArray extends Positionable implements Touchable {
 	private Vector3 convertedTouchVect = new Vector3(0, 0, 0);
 	private Draggable dragTarget = null;
 
-	public SortableArray(float x, float y, float elementWidth, int numElements, int maxElementValue) {
+	private int maxElementValue;
+
+	private int seed;
+
+	/**
+	 * Create a visual representation of an array that allows swapping of elements. 
+	 * 
+	 * @param x
+	 * @param y
+	 * @param elementWidth
+	 * @param numElements
+	 * @param maxElementValue
+	 */
+	public SortableArray(float x, float y, float elementWidth, int numElements, int maxElementValue, int seed) {
 		float initWidth = elementWidth * numElements;
 		this.elementWidth = elementWidth;
 		this.spacingWidth = elementWidth;
+		
+		this.seed = seed;
+		rng = new Random(seed);
 
 		sr = TextureLookup.shapeRenderer;
 		boundBox = new Rectangle(x, y, initWidth, SortableArray.MAX_HEIGHT);
 		
-		iterationMarker = new Sprite(TextureLookup.arrowUpSmall);
-		iterationMarker.setColor(Color.DARK_GRAY);
-		iterationMarker.setSize(elementWidth, iterationMarker.getHeight());
+		iterationMarker = configureMarker(Color.DARK_GRAY);
+		stepMarker = configureMarker(Color.YELLOW);
 
+		this.maxElementValue = maxElementValue;
 		generateElements(numElements, maxElementValue);
 		
 		//positional setup
-		setIterationMarkerToPosition(0);
+		setMarkerToPosition(iterationMarker, 0);
 		setPosition(x, y);
+	}
+	
+	public SortableArray(SortableArray toClone) {
+		//passing same seed should cause same element generation. 
+		this(toClone.getX(), toClone.getY(), toClone.elementWidth, toClone.elements.size(), toClone.maxElementValue, toClone.seed);
+		centerOnPoint(getX(), getY());
+	}
+
+	private LERPSprite configureMarker(Color color) {
+		LERPSprite sprite = new LERPSprite(TextureLookup.arrowUpSmall);
+		sprite.setColor(color);
+		sprite.setSize(elementWidth, sprite.getHeight());
+		return sprite;
 	}
 
 	private void generateElements(int numElements, int maxElementValue) {
-		Random rng = new Random();
-
 		elements = new ArrayList<VisualColumn>(numElements);
 		originalOrderingElements = new ArrayList<VisualColumn>(numElements);
 		arrayIndexPositions = new ArrayList<Vector2>(numElements);
@@ -78,8 +116,6 @@ public class SortableArray extends Positionable implements Touchable {
 			Vector2 arraySlot = new Vector2(vc.getX(), vc.getY());
 			arrayIndexPositions.add(arraySlot);
 		}
-
-		
 	}
 
 	@Override
@@ -99,7 +135,8 @@ public class SortableArray extends Positionable implements Touchable {
 			loc.y = oldY + translateY;
 		}
 		boundBox.setPosition(x, y);
-		setIterationMarkerToPosition(iterationCount);
+		setMarkerToPosition(iterationMarker, iterationIndex);
+		setMarkerToPosition(stepMarker, stepIndex);
 	}
 
 	@Override
@@ -158,6 +195,9 @@ public class SortableArray extends Positionable implements Touchable {
 	}
 	
 	public void drawPreSprites(SpriteBatch batch) {
+		if(drawStepMarker)
+			stepMarker.draw(batch);
+		
 		if(drawIterationMarker)
 			iterationMarker.draw(batch);
 	}
@@ -167,6 +207,8 @@ public class SortableArray extends Positionable implements Touchable {
 		for (VisualColumn element : elements) {
 			element.logic();
 		}
+		stepMarker.logic();
+		iterationMarker.logic();
 	}
 
 	@Override
@@ -179,7 +221,8 @@ public class SortableArray extends Positionable implements Touchable {
 		setPosition(x, y);
 		float width = elements.size() * (elementWidth + spacingWidth);
 		this.translate(-width * 0.5f, 0);
-		setIterationMarkerToPosition(iterationCount);
+		setMarkerToPosition(iterationMarker, iterationIndex);
+		setMarkerToPosition(stepMarker, stepIndex);
 	}
 
 	@Override
@@ -298,10 +341,17 @@ public class SortableArray extends Positionable implements Touchable {
 	}
 	
 	//----------------------------- Solving Methods -------------------
-	protected void setIterationMarkerToPosition(int idx) {
-		if(iterationCount < elements.size()) {
+	protected void setMarkerToPosition(LERPSprite marker, int idx) {
+		if(iterationIndex < elements.size()) {
 			Vector2 loc = arrayIndexPositions.get(idx);
-			iterationMarker.setPosition(loc.x, loc.y - iterationMarker.getHeight() * 1.5f);
+			marker.setPosition(loc.x, loc.y - marker.getHeight() * 1.5f);
+		}
+	}
+	
+	protected void setMarkerLERPToPosition(LERPSprite marker,int idx) {
+		if(iterationIndex < elements.size()) {
+			Vector2 loc = arrayIndexPositions.get(idx);
+			marker.setInterpolatePoint(loc.x, loc.y - marker.getHeight() * 1.5f);
 		}
 	}
 	
@@ -316,10 +366,11 @@ public class SortableArray extends Positionable implements Touchable {
 	}
 
 	private void incrementIteration() {
-		iterationCount += 1;
-		stepIndex = iterationCount;
+		iterationIndex += 1;
+		stepIndex = iterationIndex;
 		
-		setIterationMarkerToPosition(iterationCount);
+		setMarkerLERPToPosition(iterationMarker, iterationIndex);
+		setMarkerLERPToPosition(stepMarker, iterationIndex);
 	}
 
 	private boolean solveCompleted() {
