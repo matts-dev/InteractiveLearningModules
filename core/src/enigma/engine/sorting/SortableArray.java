@@ -2,7 +2,10 @@ package enigma.engine.sorting;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Stack;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -19,16 +22,16 @@ import enigma.engine.Touchable;
 import enigma.engine.utilities.LERPSprite;
 
 /**
- * A visual representation of an array that allows swapping of elements. 
+ * A visual representation of an array that allows swapping of elements.
  * 
  * @author matts
  * @version 1/21/2018
  */
 public class SortableArray extends Positionable implements Touchable {
 	public static final float MAX_HEIGHT = 300f;
-	
+
 	protected Random rng;
-	
+
 	protected ShapeRenderer sr;
 	protected Rectangle boundBox;
 	protected float elementWidth;
@@ -36,16 +39,19 @@ public class SortableArray extends Positionable implements Touchable {
 	protected Vector2 touchOffset = new Vector2();
 	protected ArrayList<VisualColumn> elements;
 	protected ArrayList<VisualColumn> originalOrderingElements;
-	
-	//Marks the current iteration
+	private ArrayList<VisualColumn> interpolating = new ArrayList<VisualColumn>();
+
+	// Marks the current iteration
 	protected boolean drawIterationMarker = false;
 	protected boolean drawStepMarker = false;
 	protected LERPSprite iterationMarker;
 	protected LERPSprite stepMarker;
 	protected int iterationIndex = 0;
 	protected int stepIndex = 0;
-	
-	//draw by order of height, this means that smaller blocks will draw in front and can be seen
+	protected Stack<MoveHistoryEntry> iterationMoveHistory;
+
+	// draw by order of height, this means that smaller blocks will draw in front
+	// and can be seen
 	protected ArrayList<Vector2> arrayIndexPositions;
 	protected int minimumElementValue = 1;
 
@@ -53,12 +59,15 @@ public class SortableArray extends Positionable implements Touchable {
 	private Vector3 convertedTouchVect = new Vector3(0, 0, 0);
 	private Draggable dragTarget = null;
 
-	private int maxElementValue;
+	protected int maxElementValue;
 
-	private int seed;
+	protected int seed;
+
+	protected SortableArray solution;
+	protected boolean lastMovePlayer = false;
 
 	/**
-	 * Create a visual representation of an array that allows swapping of elements. 
+	 * Create a visual representation of an array that allows swapping of elements.
 	 * 
 	 * @param x
 	 * @param y
@@ -70,27 +79,30 @@ public class SortableArray extends Positionable implements Touchable {
 		float initWidth = elementWidth * numElements;
 		this.elementWidth = elementWidth;
 		this.spacingWidth = elementWidth;
-		
+
 		this.seed = seed;
 		rng = new Random(seed);
 
 		sr = TextureLookup.shapeRenderer;
 		boundBox = new Rectangle(x, y, initWidth, SortableArray.MAX_HEIGHT);
-		
+
 		iterationMarker = configureMarker(Color.DARK_GRAY);
 		stepMarker = configureMarker(Color.YELLOW);
 
 		this.maxElementValue = maxElementValue;
 		generateElements(numElements, maxElementValue);
-		
-		//positional setup
+
+		iterationMoveHistory = new Stack<MoveHistoryEntry>();
+
+		// positional setup
 		setMarkerToPosition(iterationMarker, 0);
 		setPosition(x, y);
 	}
-	
+
 	public SortableArray(SortableArray toClone) {
-		//passing same seed should cause same element generation. 
-		this(toClone.getX(), toClone.getY(), toClone.elementWidth, toClone.elements.size(), toClone.maxElementValue, toClone.seed);
+		// passing same seed should cause same element generation.
+		this(toClone.getX(), toClone.getY(), toClone.elementWidth, toClone.elements.size(), toClone.maxElementValue,
+				toClone.seed);
 		centerOnPoint(getX(), getY());
 	}
 
@@ -164,7 +176,6 @@ public class SortableArray extends Positionable implements Touchable {
 		return boundBox.getY();
 	}
 
-	private static ArrayList<VisualColumn> interpolating = new ArrayList<VisualColumn>();
 	@Override
 	public void draw(SpriteBatch batch) {
 		interpolating.clear();
@@ -174,14 +185,15 @@ public class SortableArray extends Positionable implements Touchable {
 				interpolating.add(element);
 			}
 		}
-		
-		//draw interpolating elements overtop of the others.
+
+		// draw interpolating elements overtop of the others.
 		for (VisualColumn element : interpolating) {
 			element.draw(batch);
 		}
-		
-		//if the target is being dragged, then draw overtop of it to ensure that it is always seen regardless of height (ie draw order)
-		if(dragTarget != null) {
+
+		// if the target is being dragged, then draw overtop of it to ensure that it is
+		// always seen regardless of height (ie draw order)
+		if (dragTarget != null) {
 			Color cachedColor = sr.getColor();
 			float r = cachedColor.r;
 			float g = cachedColor.g;
@@ -193,17 +205,17 @@ public class SortableArray extends Positionable implements Touchable {
 			sr.setColor(r, g, b, a);
 		}
 	}
-	
+
 	public void drawPreSprites(SpriteBatch batch) {
-		if(drawStepMarker)
-			stepMarker.draw(batch);
-		
-		if(drawIterationMarker)
-			iterationMarker.draw(batch);
+		if (drawStepMarker) stepMarker.draw(batch);
+
+		if (drawIterationMarker) iterationMarker.draw(batch);
 	}
 
 	@Override
 	public void logic() {
+		IO();
+
 		for (VisualColumn element : elements) {
 			element.logic();
 		}
@@ -264,6 +276,7 @@ public class SortableArray extends Positionable implements Touchable {
 			handled = true;
 		}
 		dragTarget = null;
+		lastMovePlayer = true;
 
 		return handled;
 	}
@@ -272,7 +285,7 @@ public class SortableArray extends Positionable implements Touchable {
 		Vector2 loc = arrayIndexPositions.get(idxOfPosition);
 		interpolatingItem.setInterpolatePoint(loc.x, loc.y);
 		VisualColumn casted = (VisualColumn) interpolatingItem;
-		if(casted != null) {
+		if (casted != null) {
 			casted.setOverrideColor(color);
 		}
 	}
@@ -301,33 +314,65 @@ public class SortableArray extends Positionable implements Touchable {
 			VisualColumn currEle = elements.get(idx);
 			if (dragged != currEle) {
 				if (dragged.colidingWith(currEle)) {
-					VisualColumn swappedElement = forceSwap(dragged, currEle);
+					VisualColumn swappedElement = forceSwap(dragged, currEle, true);
 					return swappedElement;
-//					int draggedIndex = getIndex(dragged);
-//					int elementIndex = getIndex(currEle);
-//					if (draggedIndex != -1 && elementIndex != -1) {
-//						VisualColumn temp = elements.get(draggedIndex);
-//						elements.set(draggedIndex, currEle);
-//						elements.set(elementIndex, temp);
-//						return currEle;
-//					}
 				}
 			}
 		}
 
 		return null;
 	}
-	
-	protected VisualColumn forceSwap(VisualColumn movingElement, VisualColumn displacedElement) {
+
+	protected VisualColumn forceSwap(VisualColumn movingElement, VisualColumn displacedElement,
+			boolean recordInHistory) {
 		int fromIndex = getIndex(movingElement);
 		int toIndex = getIndex(displacedElement);
+		return forceSwap(fromIndex, toIndex, recordInHistory);
+	}
+
+	protected VisualColumn forceSwap(int fromIndex, int toIndex, boolean recordInHistory) {
 		if (fromIndex != -1 && toIndex != -1) {
 			VisualColumn temp = elements.get(fromIndex);
+			VisualColumn displacedElement = elements.get(toIndex);
 			elements.set(fromIndex, displacedElement);
 			elements.set(toIndex, temp);
+
+			if (recordInHistory) {
+				swappedIndexCallback(fromIndex, toIndex);
+			}
+
 			return displacedElement;
 		}
 		return null;
+	}
+
+	/**
+	 * A callback that alerts callee of the indices that have been swapped. Override
+	 * this to use information.
+	 * 
+	 * @param fromIndex
+	 * @param toIndex
+	 */
+	protected void swappedIndexCallback(int fromIndex, int toIndex) {
+		iterationMoveHistory.add(new MoveHistoryEntry(fromIndex, toIndex));
+	}
+
+	protected void reverseLastMove() {
+		if (iterationMoveHistory.size() > 0) {
+			MoveHistoryEntry tos = iterationMoveHistory.pop();
+			if (tos != null) {
+				VisualColumn from = elements.get(tos.fromIndex);
+				VisualColumn to = elements.get(tos.toIndex);
+
+				Vector2 fromLoc = arrayIndexPositions.get(tos.fromIndex);
+				Vector2 toLoc = arrayIndexPositions.get(tos.toIndex);
+
+				forceSwap(tos.fromIndex, tos.toIndex, false);
+
+				from.setInterpolatePoint(toLoc.x, toLoc.y);
+				to.setInterpolatePoint(fromLoc.x, fromLoc.y);
+			}
+		}
 	}
 
 	private int getIndex(Draggable element) {
@@ -339,47 +384,111 @@ public class SortableArray extends Positionable implements Touchable {
 		}
 		return -1;
 	}
-	
-	//----------------------------- Solving Methods -------------------
+
+	// ----------------------------- Solving Methods -------------------
 	protected void setMarkerToPosition(LERPSprite marker, int idx) {
-		if(iterationIndex < elements.size()) {
+		if (iterationIndex < elements.size()) {
 			Vector2 loc = arrayIndexPositions.get(idx);
 			marker.setPosition(loc.x, loc.y - marker.getHeight() * 1.5f);
 		}
 	}
-	
-	protected void setMarkerLERPToPosition(LERPSprite marker,int idx) {
-		if(iterationIndex < elements.size()) {
+
+	protected void setMarkerLERPToPosition(LERPSprite marker, int idx) {
+		if (idx < elements.size()) {
 			Vector2 loc = arrayIndexPositions.get(idx);
 			marker.setInterpolatePoint(loc.x, loc.y - marker.getHeight() * 1.5f);
 		}
 	}
-	
-	public void nextSolveStep() {
-		if(stepIndexComplete()) {
-			incrementIteration();
-		} 
-		
-		if(!solveCompleted()) {
-			
+
+	public boolean nextSolveStep(boolean allowIncrementIteration) {
+		if (stepIndexComplete()) {
+			if(allowIncrementIteration) {
+				incrementIteration();
+				
+			}
 		}
+
+		if (solveCompleted()) {
+			setMarkerLERPToPosition(stepMarker, elements.size() - 1);
+		}
+		
+		//return stepIndexComplete();
+		return false;
+	}
+
+	protected void completeNextStep() {
+		throw new RuntimeException("Subclasses should be responsible for implementing solving algorithms.");
 	}
 
 	private void incrementIteration() {
 		iterationIndex += 1;
 		stepIndex = iterationIndex;
-		
+
 		setMarkerLERPToPosition(iterationMarker, iterationIndex);
 		setMarkerLERPToPosition(stepMarker, iterationIndex);
+
+		iterationMoveHistory.clear();
 	}
 
 	private boolean solveCompleted() {
-		return false;
+		return iterationIndex >= elements.size();
 	}
 
 	protected boolean stepIndexComplete() {
-		return false;
+		throw new RuntimeException("Subclasses are responsible for implementing solving behavior");
 	}
-	
-	//----------------------------- Solving Methods -------------------
+
+	protected void IO() {
+		if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+			if (!lastMovePlayer || iterationMoveHistory.size() == 0) {
+				nextSolveStep(true);
+				lastMovePlayer = false;
+			} else {
+				compareUserAgainstSolution();
+			}
+		}
+
+		if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+			reverseLastMove();
+		}
+
+	}
+
+	protected void compareUserAgainstSolution() {
+		if (solution == null) {
+			createSolutionArray();
+		}
+		//if the solution is ahead of current user, then back AI solution up to player's current move. 
+		while(solution.iterationMoveHistory.size() > iterationMoveHistory.size()) {
+			solution.reverseLastMove();
+		}
+
+		// catch AI up to user's valid iteration
+		while (iterationIndex < solution.iterationIndex && iterationIndex != elements.size()) {
+			solution.nextSolveStep(false);
+		}
+
+		//return if the array has been sorted.
+		if (iterationIndex == elements.size()) {
+			return;
+		}
+		
+		for(int idx = iterationIndex; idx >= 0 && idx >= stepIndex; --idx) {
+			if(solution.elements.get(idx).getValue() != elements.get(idx).getValue()) {
+				//solution is wrong
+			}
+		}
+		
+		
+	}
+
+	protected void createSolutionArray() {
+		// having a non-specific sortable array is useful, but having a non-specific
+		// sortable array solve itself isn't meaningful because
+		// it is specifically designed to be free of any sorting algorithm.
+		throw new RuntimeException(
+				"This method should be provided by a subclass. However it should not make the entire sortable array abstract.");
+	}
+
+	// ----------------------------- Solving Methods -------------------
 }
