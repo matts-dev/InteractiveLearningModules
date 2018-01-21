@@ -35,8 +35,8 @@ public class SortModule extends CourseModule {
 	public SortModule(OrthographicCamera camera) {
 		super(camera);
 		sr = TextureLookup.shapeRenderer;
-		rng = new Random();
-		//rng = new Random(33); set seed for all generation by uncommenting this line. 
+//		rng = new Random();
+		rng = new Random(33); //set seed for all generation by uncommenting this line. 
 
 		// randomly chose between 7-9 elements
 		numElements = rng.nextInt(3) + 7;
