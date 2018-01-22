@@ -19,6 +19,7 @@ import enigma.engine.Positionable;
 import enigma.engine.TextureLookup;
 import enigma.engine.Tools;
 import enigma.engine.Touchable;
+import enigma.engine.utilities.DimmingSprite;
 import enigma.engine.utilities.LERPSprite;
 
 /**
@@ -66,6 +67,11 @@ public class SortableArray extends Positionable implements Touchable {
 	protected SortableArray solution;
 	protected boolean lastMovePlayer = false;
 
+	/** Handle Incorrect moves by player. */
+	protected ArrayList<VisualColumn> currentReversing = new ArrayList<VisualColumn>();
+	protected boolean continueReversingUserMoves = false;
+	protected DimmingSprite incorrectMoveSprite;
+
 	/**
 	 * Create a visual representation of an array that allows swapping of elements.
 	 * 
@@ -79,6 +85,10 @@ public class SortableArray extends Positionable implements Touchable {
 		float initWidth = elementWidth * numElements;
 		this.elementWidth = elementWidth;
 		this.spacingWidth = elementWidth;
+		
+		this.incorrectMoveSprite = new DimmingSprite(TextureLookup.redX);
+		this.incorrectMoveSprite.setSize(10*incorrectMoveSprite.getWidth(), 10*incorrectMoveSprite.getHeight());
+		this.incorrectMoveSprite.setPosition(Gdx.graphics.getWidth()/2 - incorrectMoveSprite.getWidth()/2, Gdx.graphics.getHeight()/2);
 
 		this.seed = seed;
 		rng = new Random(seed);
@@ -204,12 +214,17 @@ public class SortableArray extends Positionable implements Touchable {
 			dragTarget.draw(batch);
 			sr.setColor(r, g, b, a);
 		}
+		
 	}
 
 	public void drawPreSprites(SpriteBatch batch) {
 		if (drawStepMarker) stepMarker.draw(batch);
 
 		if (drawIterationMarker) iterationMarker.draw(batch);
+	}
+	
+	public void drawPostSprites(SpriteBatch batch) {
+		incorrectMoveSprite.draw(batch);
 	}
 
 	@Override
@@ -221,6 +236,24 @@ public class SortableArray extends Positionable implements Touchable {
 		}
 		stepMarker.logic();
 		iterationMarker.logic();
+		incorrectMoveSprite.logic();
+
+		handleReversingItems();
+	}
+
+	private void handleReversingItems() {
+		if (currentReversing.size() > 0) {
+			boolean shouldClear = true;
+			for (VisualColumn reversingItem : currentReversing) {
+				if (reversingItem.isInterpolating()) {
+					shouldClear = false;
+					break;
+				}
+			}
+			if (shouldClear) {
+				currentReversing.clear();
+			}
+		}
 	}
 
 	@Override
@@ -240,23 +273,25 @@ public class SortableArray extends Positionable implements Touchable {
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button, OrthographicCamera camera) {
 		boolean handled = false;
-		Tools.convertMousePointsIntoGameCoordinates(camera, convertedTouchVect);
+		if (allowUserInput()) {
+			Tools.convertMousePointsIntoGameCoordinates(camera, convertedTouchVect);
 
-		for (VisualColumn element : elements) {
-			if (element.contains(convertedTouchVect.x, convertedTouchVect.y)) {
-				dragTarget = element;
-				dragTarget.startedDragging(convertedTouchVect.x, convertedTouchVect.y);
-				handled = true;
-				break;
+			for (VisualColumn element : elements) {
+				if (element.contains(convertedTouchVect.x, convertedTouchVect.y)) {
+					dragTarget = element;
+					dragTarget.startedDragging(convertedTouchVect.x, convertedTouchVect.y);
+					handled = true;
+					break;
+				}
 			}
 		}
-
 		return handled;
 	}
 
 	@Override
 	public boolean touchUp(int screenX, int screenY, int pointer, int button, OrthographicCamera camera) {
 		boolean handled = false;
+
 		Tools.convertMousePointsIntoGameCoordinates(camera, convertedTouchVect);
 
 		if (dragTarget != null) {
@@ -277,7 +312,6 @@ public class SortableArray extends Positionable implements Touchable {
 		}
 		dragTarget = null;
 		lastMovePlayer = true;
-
 		return handled;
 	}
 
@@ -371,6 +405,9 @@ public class SortableArray extends Positionable implements Touchable {
 
 				from.setInterpolatePoint(toLoc.x, toLoc.y);
 				to.setInterpolatePoint(fromLoc.x, fromLoc.y);
+
+				currentReversing.add(from);
+				currentReversing.add(to);
 			}
 		}
 	}
@@ -402,17 +439,17 @@ public class SortableArray extends Positionable implements Touchable {
 
 	public boolean nextSolveStep(boolean allowIncrementIteration) {
 		if (stepIndexComplete()) {
-			if(allowIncrementIteration) {
+			if (allowIncrementIteration) {
 				incrementIteration();
-				
+
 			}
 		}
 
 		if (solveCompleted()) {
 			setMarkerLERPToPosition(stepMarker, elements.size() - 1);
 		}
-		
-		//return stepIndexComplete();
+
+		// return stepIndexComplete();
 		return false;
 	}
 
@@ -439,47 +476,88 @@ public class SortableArray extends Positionable implements Touchable {
 	}
 
 	protected void IO() {
-		if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-			if (!lastMovePlayer || iterationMoveHistory.size() == 0) {
-				nextSolveStep(true);
-				lastMovePlayer = false;
-			} else {
-				compareUserAgainstSolution();
+		if (allowUserInput()) {
+			if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && dragTarget == null) {
+				if (!lastMovePlayer || iterationMoveHistory.size() == 0) {
+					nextSolveStep(true);
+					lastMovePlayer = false;
+				} else {
+					compareUserAgainstSolution();
+					lastMovePlayer = false;
+				}
+			}
+
+			if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+				reverseLastMove();
 			}
 		}
-
-		if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
-			reverseLastMove();
-		}
-
 	}
 
 	protected void compareUserAgainstSolution() {
 		if (solution == null) {
 			createSolutionArray();
 		}
-		//if the solution is ahead of current user, then back AI solution up to player's current move. 
-		while(solution.iterationMoveHistory.size() > iterationMoveHistory.size()) {
-			solution.reverseLastMove();
-		}
 
-		// catch AI up to user's valid iteration
-		while (iterationIndex < solution.iterationIndex && iterationIndex != elements.size()) {
-			solution.nextSolveStep(false);
-		}
-
-		//return if the array has been sorted.
+		// return if the array has been sorted.
 		if (iterationIndex == elements.size()) {
 			return;
 		}
-		
-		for(int idx = iterationIndex; idx >= 0 && idx >= stepIndex; --idx) {
-			if(solution.elements.get(idx).getValue() != elements.get(idx).getValue()) {
-				//solution is wrong
+
+		// ITERATION: catch AI up to user's valid *iteration*
+		while (iterationIndex > solution.iterationIndex && iterationIndex != elements.size()) {
+			solution.nextSolveStep(true);
+		}
+
+		// STEP: if the solution is ahead of current user STEP, then back AI solution up
+		// to player's current move.
+		while (solution.iterationMoveHistory.size() > iterationMoveHistory.size()) {
+			solution.reverseLastMove();
+			return;
+		}
+
+		// STEP: if solution is not as far as user, step
+		int lastHistorySize = -1;
+		while (solution.iterationMoveHistory.size() < iterationMoveHistory.size()
+				&& lastHistorySize != solution.iterationMoveHistory.size()) {
+			// to prevent infinite loop where the user has more stpes than solution
+			// requires,
+			// cache the lastHistorySize. If it is every the same for two iterations, then
+			// the user has too many moves.
+			lastHistorySize = solution.iterationMoveHistory.size();
+
+			// advance a step to persue the user's current solution.
+			solution.nextSolveStep(false);
+		}
+
+		// AI solution should now match user solution length, otherwise user made too
+		// many moves
+		if (solution.iterationMoveHistory.size() != iterationMoveHistory.size()) {
+			// undo a single wrong move
+			reverseUsersLastIncorrectMove();
+			return;
+		}
+
+		// 
+		for (int idx = iterationIndex; idx >= 0 && idx >= stepIndex; --idx) {
+			int solutionValue = solution.elements.get(idx).getValue(); 
+			int userValue = elements.get(idx).getValue();
+			
+			if (solutionValue != userValue) {
+				// solution is wrong
+				reverseUsersLastIncorrectMove();
+				// ?-set flag to have this keep reversing until solution matches-n?
+				return;
 			}
 		}
+
+	}
+
+	private void reverseUsersLastIncorrectMove() {
 		
-		
+		continueReversingUserMoves = true;
+		reverseLastMove();
+		incorrectMoveSprite.startDimming();
+		throw new RuntimeException("Pick Up Here, make it continue reversing moves...");
 	}
 
 	protected void createSolutionArray() {
@@ -490,5 +568,9 @@ public class SortableArray extends Positionable implements Touchable {
 				"This method should be provided by a subclass. However it should not make the entire sortable array abstract.");
 	}
 
-	// ----------------------------- Solving Methods -------------------
+	// ------------------------------------------------
+
+	boolean allowUserInput() {
+		return currentReversing.size() == 0;
+	}
 }
