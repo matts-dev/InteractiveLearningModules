@@ -108,6 +108,7 @@ public class SortModule extends CourseModule {
 		if (batchWasDrawing) {
 			// restore batch drawing.
 			batch.begin();
+			array.drawPostSprites(batch);
 		}
 	}
 
