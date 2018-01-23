@@ -252,6 +252,9 @@ public class SortableArray extends Positionable implements Touchable {
 			}
 			if (shouldClear) {
 				currentReversing.clear();
+				if(continueReversingUserMoves) {
+					compareUserAgainstSolution();
+				}
 			}
 		}
 	}
@@ -493,14 +496,17 @@ public class SortableArray extends Positionable implements Touchable {
 		}
 	}
 
-	protected void compareUserAgainstSolution() {
+	protected boolean compareUserAgainstSolution() {
+		//assume user is correct, if not then set this flag again.
+		continueReversingUserMoves = false;
+		
 		if (solution == null) {
 			createSolutionArray();
 		}
 
 		// return if the array has been sorted.
 		if (iterationIndex == elements.size()) {
-			return;
+			return false;
 		}
 
 		// ITERATION: catch AI up to user's valid *iteration*
@@ -512,7 +518,7 @@ public class SortableArray extends Positionable implements Touchable {
 		// to player's current move.
 		while (solution.iterationMoveHistory.size() > iterationMoveHistory.size()) {
 			solution.reverseLastMove();
-			return;
+			return false;
 		}
 
 		// STEP: if solution is not as far as user, step
@@ -534,7 +540,7 @@ public class SortableArray extends Positionable implements Touchable {
 		if (solution.iterationMoveHistory.size() != iterationMoveHistory.size()) {
 			// undo a single wrong move
 			reverseUsersLastIncorrectMove();
-			return;
+			return false;
 		}
 
 		// 
@@ -546,18 +552,16 @@ public class SortableArray extends Positionable implements Touchable {
 				// solution is wrong
 				reverseUsersLastIncorrectMove();
 				// ?-set flag to have this keep reversing until solution matches-n?
-				return;
+				return false;
 			}
 		}
-
+		return true;
 	}
 
 	private void reverseUsersLastIncorrectMove() {
-		
 		continueReversingUserMoves = true;
 		reverseLastMove();
 		incorrectMoveSprite.startDimming();
-		throw new RuntimeException("Pick Up Here, make it continue reversing moves...");
 	}
 
 	protected void createSolutionArray() {
