@@ -19,6 +19,7 @@ public class TextureLookup {
 	public static Texture arrowUpLarge;
 	public static Texture arrowUpSmall;
 	public static Texture redX;
+	public static Texture greenCheckMark;
 
 	public static BitmapFont whiteBMFont;
 	public static BitmapFont yellowBMFont;
@@ -62,6 +63,7 @@ public class TextureLookup {
 		arrowUpLarge = loadTexture("UpArrowLargeSolid.png");
 		arrowUpSmall = loadTexture("UpArrowSolid.png");
 		redX = loadTexture("RedX.png");
+		greenCheckMark = loadTexture("greenCheckMark.png");
 	}
 	
 	private static Texture loadTexture(String name) {

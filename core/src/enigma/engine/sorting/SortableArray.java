@@ -44,7 +44,7 @@ public class SortableArray extends Positionable implements Touchable {
 	private ArrayList<VisualColumn> interpolating = new ArrayList<VisualColumn>();
 	protected Timer timer = new Timer();
 	protected String reverseTimeKey = "reverse";
-	
+
 	// Marks the current iteration
 	protected boolean drawIterationMarker = false;
 	protected boolean drawStepMarker = false;
@@ -53,7 +53,6 @@ public class SortableArray extends Positionable implements Touchable {
 	protected int iterationIndex = 0;
 	protected int stepIndex = 0;
 	protected Stack<MoveHistoryEntry> iterationMoveHistory;
-	
 
 	// draw by order of height, this means that smaller blocks will draw in front
 	// and can be seen
@@ -74,7 +73,9 @@ public class SortableArray extends Positionable implements Touchable {
 	/** Handle Incorrect moves by player. */
 	protected ArrayList<VisualColumn> currentReversing = new ArrayList<VisualColumn>();
 	protected boolean continueReversingUserMoves = false;
+	protected boolean continueCheckingMoves = false;
 	protected DimmingSprite incorrectMoveSprite;
+	protected DimmingSprite correctMoveSprite;
 
 	/**
 	 * Create a visual representation of an array that allows swapping of elements.
@@ -89,10 +90,15 @@ public class SortableArray extends Positionable implements Touchable {
 		float initWidth = elementWidth * numElements;
 		this.elementWidth = elementWidth;
 		this.spacingWidth = elementWidth;
-		
+
 		this.incorrectMoveSprite = new DimmingSprite(TextureLookup.redX);
-		this.incorrectMoveSprite.setSize(10*incorrectMoveSprite.getWidth(), 10*incorrectMoveSprite.getHeight());
-		this.incorrectMoveSprite.setPosition(Gdx.graphics.getWidth()/2 - incorrectMoveSprite.getWidth()/2, Gdx.graphics.getHeight()/2);
+		this.incorrectMoveSprite.setSize(10 * incorrectMoveSprite.getWidth(), 10 * incorrectMoveSprite.getHeight());
+		this.incorrectMoveSprite.setPosition(Gdx.graphics.getWidth() / 2 - incorrectMoveSprite.getWidth() / 2,
+				Gdx.graphics.getHeight() / 2);
+		this.correctMoveSprite = new DimmingSprite(TextureLookup.greenCheckMark);
+		this.correctMoveSprite.setSize(10 * correctMoveSprite.getWidth(), 10 * correctMoveSprite.getHeight());
+		this.correctMoveSprite.setPosition(Gdx.graphics.getWidth() / 2 - correctMoveSprite.getWidth() / 2,
+				Gdx.graphics.getHeight() / 2);
 
 		this.seed = seed;
 		rng = new Random(seed);
@@ -218,7 +224,7 @@ public class SortableArray extends Positionable implements Touchable {
 			dragTarget.draw(batch);
 			sr.setColor(r, g, b, a);
 		}
-		
+
 	}
 
 	public void drawPreSprites(SpriteBatch batch) {
@@ -226,9 +232,10 @@ public class SortableArray extends Positionable implements Touchable {
 
 		if (drawIterationMarker) iterationMarker.draw(batch);
 	}
-	
+
 	public void drawPostSprites(SpriteBatch batch) {
 		incorrectMoveSprite.draw(batch);
+		correctMoveSprite.draw(batch);
 	}
 
 	@Override
@@ -241,26 +248,37 @@ public class SortableArray extends Positionable implements Touchable {
 		stepMarker.logic();
 		iterationMarker.logic();
 		incorrectMoveSprite.logic();
+		correctMoveSprite.logic();
 
 		handleReversingItems();
+		handleCorrectingItems();
+	}
+
+	private void handleCorrectingItems() {
+		if (!(iterationMarker.isInterpolating() || stepMarker.isInterpolating())) {
+			if (continueCheckingMoves) {
+				// immediately upon correction being done, check next move.
+				compareUserAgainstSolution();
+			}
+		}
 	}
 
 	private void handleReversingItems() {
 		if (currentReversing.size() > 0) {
-			boolean shouldClear = true;
+			boolean shouldClearReversingDataStructure = true;
 			for (VisualColumn reversingItem : currentReversing) {
 				if (reversingItem.isInterpolating()) {
-					shouldClear = false;
-					
+					shouldClearReversingDataStructure = false;
+
 					break;
 				}
 			}
-			if (shouldClear) {
-				if(timer.hasTimer(reverseTimeKey) && !timer.timerUp(reverseTimeKey)) {
+			if (shouldClearReversingDataStructure) {
+				if (timer.hasTimer(reverseTimeKey) && !timer.timerUp(reverseTimeKey)) {
 					return;
 				}
 				currentReversing.clear();
-				if(continueReversingUserMoves) {
+				if (continueReversingUserMoves) {
 					compareUserAgainstSolution();
 				}
 			}
@@ -419,9 +437,16 @@ public class SortableArray extends Positionable implements Touchable {
 
 				currentReversing.add(from);
 				currentReversing.add(to);
-				
+
 				timer.setTimer(reverseTimeKey, 550);
 			}
+		}
+	}
+	
+	protected void reverseLastSolutionStep() {
+		if(stepIndex < iterationIndex) {
+			stepIndex += 1;
+			setMarkerLERPToPosition(stepMarker, stepIndex);
 		}
 	}
 
@@ -454,7 +479,6 @@ public class SortableArray extends Positionable implements Touchable {
 		if (stepIndexComplete()) {
 			if (allowIncrementIteration) {
 				incrementIteration();
-
 			}
 		}
 
@@ -495,21 +519,26 @@ public class SortableArray extends Positionable implements Touchable {
 					nextSolveStep(true);
 					lastMovePlayer = false;
 				} else {
-					compareUserAgainstSolution();
-					lastMovePlayer = false;
+					lastMovePlayer = !compareUserAgainstSolution();
+					//lastMovePlayer = false;
 				}
 			}
 
 			if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
 				reverseLastMove();
+				reverseLastSolutionStep();
 			}
 		}
 	}
 
+	private int lastCorrectStep = 0;
+
 	protected boolean compareUserAgainstSolution() {
-		//assume user is correct, if not then set this flag again.
+		// assume user is correct, if not then set this flag again.
+		boolean wasReversing = continueReversingUserMoves;
 		continueReversingUserMoves = false;
-		
+		continueCheckingMoves = false;
+
 		if (solution == null) {
 			createSolutionArray();
 		}
@@ -522,16 +551,21 @@ public class SortableArray extends Positionable implements Touchable {
 		// ITERATION: catch AI up to user's valid *iteration*
 		while (iterationIndex > solution.iterationIndex && iterationIndex != elements.size()) {
 			solution.nextSolveStep(true);
+			
+			//since we're catching AI up, let's reset the iteration index.
+			//lastCorrectStep = iterationIndex + 1; // plus 1 so first step is checked.
+			lastCorrectStep = iterationIndex; 
 		}
 
 		// STEP: if the solution is ahead of current user STEP, then back AI solution up
 		// to player's current move.
 		while (solution.iterationMoveHistory.size() > iterationMoveHistory.size()) {
 			solution.reverseLastMove();
-			return false;
+			solution.reverseLastSolutionStep();
+			//return false;
 		}
 
-		// STEP: if solution is not as far as user, step
+		// STEP: if solution is not as far completed as user, step
 		int lastHistorySize = -1;
 		while (solution.iterationMoveHistory.size() < iterationMoveHistory.size()
 				&& lastHistorySize != solution.iterationMoveHistory.size()) {
@@ -553,19 +587,64 @@ public class SortableArray extends Positionable implements Touchable {
 			return false;
 		}
 
-		// 
-		for (int idx = iterationIndex; idx >= 0 && idx >= stepIndex; --idx) {
-			int solutionValue = solution.elements.get(idx).getValue(); 
+		// iterate down from iteration index looking for mistakes
+		for (int idx = iterationIndex; idx >= 0 && idx >= iterationIndex - stepIndex; --idx) {
+			int solutionValue = solution.elements.get(idx).getValue();
 			int userValue = elements.get(idx).getValue();
-			
+
 			if (solutionValue != userValue) {
 				// solution is wrong
 				reverseUsersLastIncorrectMove();
-				// ?-set flag to have this keep reversing until solution matches-n?
 				return false;
 			}
 		}
+		
+		//scan higher order of array looking for mistakes.
+		for (int idx = iterationIndex; idx < elements.size(); ++idx) {
+			int solutionValue = solution.elements.get(idx).getValue();
+			int userValue = elements.get(idx).getValue();
+
+			if (solutionValue != userValue) {
+				// solution is wrong
+				reverseUsersLastIncorrectMove();
+				return false;
+			}
+		}
+
+		if(!wasReversing) {
+			// iterate down from iteration index looking for correct animations
+			for (int idx = iterationIndex - 1; idx >= 0 && idx >= iterationIndex - iterationMoveHistory.size(); --idx) {
+				int solutionValue = solution.elements.get(idx).getValue();
+				int userValue = elements.get(idx).getValue();
+				if (solutionValue == userValue) {
+					if (lastCorrectStep > idx) {
+						// show that step was correct and update pointers (will be function call)
+						lastCorrectStep = idx; // prevent correct animation from running on this idx next time.
+						
+						if(stepIndex > lastCorrectStep) {
+							setupAnimateToCorrectMove(idx);
+							stepIndex -= 1;
+						} else {
+							//ignore animating, but do call this
+							continueCheckingMoves = true;
+						}
+						// in debate whether to return true/false when user has made correct move.
+						return false;// let animation play
+					}
+				}
+			}
+		}
+		
 		return true;
+	}
+
+	private void setupAnimateToCorrectMove(int curStepIdx) {
+		continueCheckingMoves = true;
+		curStepIdx = curStepIdx != 0 ? curStepIdx: 0;
+
+		setMarkerLERPToPosition(iterationMarker, solution.iterationIndex);
+		setMarkerLERPToPosition(stepMarker, curStepIdx);
+		correctMoveSprite.startDimming();
 	}
 
 	private void reverseUsersLastIncorrectMove() {
@@ -585,6 +664,6 @@ public class SortableArray extends Positionable implements Touchable {
 	// ------------------------------------------------
 
 	boolean allowUserInput() {
-		return currentReversing.size() == 0;
+		return currentReversing.size() == 0 && !iterationMarker.isInterpolating() && !stepMarker.isInterpolating();
 	}
 }

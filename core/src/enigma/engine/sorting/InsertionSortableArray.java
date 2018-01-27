@@ -46,7 +46,7 @@ public class InsertionSortableArray extends SortableArray{
 			VisualColumn step = elements.get(stepIndex);
 			VisualColumn leftNeighbor = elements.get(stepIndex - 1);
 			
-			if (leftNeighbor.getValue() >= step.getValue() ){
+			if (leftNeighbor.getValue() > step.getValue() ){
 				
 				forceSwap(step, leftNeighbor, true);
 				setLERPToPosition(stepIndex, leftNeighbor, TextureLookup.getBlueColor());
@@ -60,7 +60,7 @@ public class InsertionSortableArray extends SortableArray{
 				//check the next left pair //note that the step index has already been decremented
 				step = elements.get(stepIndex);
 				leftNeighbor = elements.get(stepIndex - 1); 
-				if (leftNeighbor.getValue() < step.getValue() ){
+				if (leftNeighbor.getValue() <= step.getValue() ){
 					stepIndex = 0;
 					return false;
 				}
