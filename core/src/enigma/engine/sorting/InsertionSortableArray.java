@@ -56,13 +56,14 @@ public class InsertionSortableArray extends SortableArray{
 			} 
 			
 			//check if solution is complete (this prevents extra enter being pressed)
-			if(stepIndex != 0) {
+			else if(stepIndex != 0) {
 				//check the next left pair //note that the step index has already been decremented
 				step = elements.get(stepIndex);
 				leftNeighbor = elements.get(stepIndex - 1); 
 				if (leftNeighbor.getValue() <= step.getValue() ){
 					stepIndex = 0;
-					return false;
+					//return false;//original
+					return true;
 				}
 			}
 		} else {
