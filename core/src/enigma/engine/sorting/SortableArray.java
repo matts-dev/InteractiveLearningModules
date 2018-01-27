@@ -520,7 +520,12 @@ public class SortableArray extends Positionable implements Touchable {
 					lastMovePlayer = false;
 				} else {
 					lastMovePlayer = !compareUserAgainstSolution();
-					//lastMovePlayer = false;
+					
+					if(!lastMovePlayer) {
+						//if comparing against solution didn't update any animations (returns false),
+						//then user was wanting to see next step.
+						nextSolveStep(true);
+					}
 				}
 			}
 
@@ -533,6 +538,9 @@ public class SortableArray extends Positionable implements Touchable {
 
 	private int lastCorrectStep = 0;
 
+	/**
+	 * @return true if state is same as when method called; return false animation or update occurred.   
+	 */
 	protected boolean compareUserAgainstSolution() {
 		// assume user is correct, if not then set this flag again.
 		boolean wasReversing = continueReversingUserMoves;
@@ -625,11 +633,12 @@ public class SortableArray extends Positionable implements Touchable {
 							setupAnimateToCorrectMove(idx);
 							stepIndex -= 1;
 						} else {
-							//ignore animating, but do call this
+							//ignore animating, but do re-call this method.
 							continueCheckingMoves = true;
 						}
-						// in debate whether to return true/false when user has made correct move.
-						return false;// let animation play
+						
+						return false;
+						//return idx < iterationIndex - iterationMoveHistory.size();
 					}
 				}
 			}
