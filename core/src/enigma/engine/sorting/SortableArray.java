@@ -17,6 +17,7 @@ import com.badlogic.gdx.math.Vector3;
 import enigma.engine.Draggable;
 import enigma.engine.Positionable;
 import enigma.engine.TextureLookup;
+import enigma.engine.Timer;
 import enigma.engine.Tools;
 import enigma.engine.Touchable;
 import enigma.engine.utilities.DimmingSprite;
@@ -41,7 +42,9 @@ public class SortableArray extends Positionable implements Touchable {
 	protected ArrayList<VisualColumn> elements;
 	protected ArrayList<VisualColumn> originalOrderingElements;
 	private ArrayList<VisualColumn> interpolating = new ArrayList<VisualColumn>();
-
+	protected Timer timer = new Timer();
+	protected String reverseTimeKey = "reverse";
+	
 	// Marks the current iteration
 	protected boolean drawIterationMarker = false;
 	protected boolean drawStepMarker = false;
@@ -50,6 +53,7 @@ public class SortableArray extends Positionable implements Touchable {
 	protected int iterationIndex = 0;
 	protected int stepIndex = 0;
 	protected Stack<MoveHistoryEntry> iterationMoveHistory;
+	
 
 	// draw by order of height, this means that smaller blocks will draw in front
 	// and can be seen
@@ -247,10 +251,14 @@ public class SortableArray extends Positionable implements Touchable {
 			for (VisualColumn reversingItem : currentReversing) {
 				if (reversingItem.isInterpolating()) {
 					shouldClear = false;
+					
 					break;
 				}
 			}
 			if (shouldClear) {
+				if(timer.hasTimer(reverseTimeKey) && !timer.timerUp(reverseTimeKey)) {
+					return;
+				}
 				currentReversing.clear();
 				if(continueReversingUserMoves) {
 					compareUserAgainstSolution();
@@ -411,6 +419,8 @@ public class SortableArray extends Positionable implements Touchable {
 
 				currentReversing.add(from);
 				currentReversing.add(to);
+				
+				timer.setTimer(reverseTimeKey, 550);
 			}
 		}
 	}
