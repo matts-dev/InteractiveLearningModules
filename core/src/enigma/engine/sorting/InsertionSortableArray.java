@@ -9,8 +9,8 @@ public class InsertionSortableArray extends SortableArray{
 	
 	public InsertionSortableArray(float x, float y, float elementWidth, int numElements, int maxElementValue, int seed) {
 		super(x, y, elementWidth, numElements, maxElementValue, seed);
-		drawIterationMarker = true;
-		drawStepMarker = true;
+		setDrawIterationMarker(true);
+		setDrawStepMarker(true);
 	}
 
 	@Override
@@ -107,6 +107,8 @@ public class InsertionSortableArray extends SortableArray{
 	public void createSolutionArray(){
 		solution = new InsertionSortableArray(getX(), getY(), elementWidth, elements.size(), maxElementValue, seed);
 	}
+
+	
 }
 
 

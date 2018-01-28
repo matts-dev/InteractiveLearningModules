@@ -45,7 +45,8 @@ public class SortModule extends CourseModule {
 	}
 
 	private void createNewArray() {
-		array = new InsertionSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10, rng.nextInt());
+		//array = new InsertionSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10, rng.nextInt());
+		array = new SelectionSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10, rng.nextInt());
 		array.centerOnPoint(Gdx.graphics.getWidth() * .5f, Gdx.graphics.getHeight() * .2f);
 	}
 
