@@ -46,8 +46,8 @@ public class SortableArray extends Positionable implements Touchable {
 	protected String reverseTimeKey = "reverse";
 
 	// Marks the current iteration
-	protected boolean drawIterationMarker = false;
-	protected boolean drawStepMarker = false;
+	private boolean drawIterationMarker = false;
+	private boolean drawStepMarker = false;
 	protected LERPSprite iterationMarker;
 	protected LERPSprite stepMarker;
 	protected int iterationIndex = 0;
@@ -126,7 +126,7 @@ public class SortableArray extends Positionable implements Touchable {
 		centerOnPoint(getX(), getY());
 	}
 
-	private LERPSprite configureMarker(Color color) {
+	protected LERPSprite configureMarker(Color color) {
 		LERPSprite sprite = new LERPSprite(TextureLookup.arrowUpSmall);
 		sprite.setColor(color);
 		sprite.setSize(elementWidth, sprite.getHeight());
@@ -228,9 +228,9 @@ public class SortableArray extends Positionable implements Touchable {
 	}
 
 	public void drawPreSprites(SpriteBatch batch) {
-		if (drawStepMarker) stepMarker.draw(batch);
+		if (shouldDrawStepMarker()) stepMarker.draw(batch);
 
-		if (drawIterationMarker) iterationMarker.draw(batch);
+		if (shouldDrawIterationMarker()) iterationMarker.draw(batch);
 	}
 
 	public void drawPostSprites(SpriteBatch batch) {
@@ -443,6 +443,22 @@ public class SortableArray extends Positionable implements Touchable {
 		}
 	}
 	
+	protected void swapWithAnimation(int fromIndex, int toIndex, boolean recordHistory) {
+		VisualColumn from = elements.get(fromIndex);
+		VisualColumn to = elements.get(toIndex);
+
+		Vector2 fromLoc = arrayIndexPositions.get(fromIndex);
+		Vector2 toLoc = arrayIndexPositions.get(toIndex);
+
+		forceSwap(fromIndex, toIndex, false);
+
+		from.setInterpolatePoint(toLoc.x, toLoc.y);
+		to.setInterpolatePoint(fromLoc.x, fromLoc.y);
+
+		//currentReversing.add(from);
+		//currentReversing.add(to);
+	}
+	
 	protected void reverseLastSolutionStep() {
 		if(stepIndex < iterationIndex) {
 			stepIndex += 1;
@@ -494,7 +510,7 @@ public class SortableArray extends Positionable implements Touchable {
 		throw new RuntimeException("Subclasses should be responsible for implementing solving algorithms.");
 	}
 
-	private void incrementIteration() {
+	protected void incrementIteration() {
 		iterationIndex += 1;
 		stepIndex = iterationIndex;
 
@@ -515,6 +531,7 @@ public class SortableArray extends Positionable implements Touchable {
 	protected void IO() {
 		if (allowUserInput()) {
 			if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && dragTarget == null) {
+
 				if (!lastMovePlayer || iterationMoveHistory.size() == 0) {
 					nextSolveStep(true);
 					lastMovePlayer = false;
@@ -672,7 +689,23 @@ public class SortableArray extends Positionable implements Touchable {
 
 	// ------------------------------------------------
 
-	boolean allowUserInput() {
+	protected boolean allowUserInput() {
 		return currentReversing.size() == 0 && !iterationMarker.isInterpolating() && !stepMarker.isInterpolating();
+	}
+
+	public boolean shouldDrawStepMarker() {
+		return drawStepMarker;
+	}
+
+	public void setDrawStepMarker(boolean drawStepMarker) {
+		this.drawStepMarker = drawStepMarker;
+	}
+
+	public boolean shouldDrawIterationMarker() {
+		return drawIterationMarker;
+	}
+
+	public void setDrawIterationMarker(boolean drawIterationMarker) {
+		this.drawIterationMarker = drawIterationMarker;
 	}
 }
