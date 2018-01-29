@@ -20,6 +20,7 @@ public class VisualColumn extends Draggable {
 	protected int value;
 
 	protected boolean interpolateToPoint = false;
+	private boolean forceColorOverride = false;
 	protected Vector2 interpolatePoint = new Vector2();
 	protected float interpolateSpeed = Tools.convertSpeedTo60FPSValue(10f);
 
@@ -49,7 +50,7 @@ public class VisualColumn extends Draggable {
 		if (!sr.isDrawing())
 			throw new RuntimeException("Please configure TextureLookup shape renderer before calling draw");
 
-		if (interpolateToPoint) {
+		if (interpolateToPoint || shouldForceColorOverride()) {
 			// use color override
 			Color cacheColor = sr.getColor();
 			float a = cacheColor.a;
@@ -162,6 +163,10 @@ public class VisualColumn extends Draggable {
 		this.overrideColor.b =overrideColor.b;
 		this.overrideColor.a =overrideColor.a;
 	}
+	
+	public Color getOverrideColorReference() {
+		return overrideColor;
+	}
 
 	public boolean isInterpolating() {
 		return interpolateToPoint;
@@ -169,5 +174,13 @@ public class VisualColumn extends Draggable {
 
 	public int getValue() {
 		return value;
+	}
+
+	public boolean shouldForceColorOverride() {
+		return forceColorOverride;
+	}
+
+	public void setAlwaysForceColorOverride(boolean forceColorOverride) {
+		this.forceColorOverride = forceColorOverride;
 	}
 }
