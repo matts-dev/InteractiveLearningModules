@@ -64,7 +64,7 @@ public class SortableArray extends Positionable implements Touchable {
 
 	// utility for converting touches
 	private Vector3 convertedTouchVect = new Vector3(0, 0, 0);
-	private Draggable dragTarget = null;
+	protected Draggable dragTarget = null;
 
 	protected int maxElementValue;
 
@@ -77,8 +77,8 @@ public class SortableArray extends Positionable implements Touchable {
 	protected ArrayList<VisualColumn> currentReversing = new ArrayList<VisualColumn>();
 	protected boolean continueReversingUserMoves = false;
 	protected boolean continueCheckingMoves = false;
-	protected DimmingSprite incorrectMoveSprite;
-	protected DimmingSprite correctMoveSprite;
+	protected DimmingSprite redX;
+	protected DimmingSprite greenCheck;
 
 	/**
 	 * Create a visual representation of an array that allows swapping of elements.
@@ -94,13 +94,13 @@ public class SortableArray extends Positionable implements Touchable {
 		this.elementWidth = elementWidth;
 		this.spacingWidth = elementWidth;
 
-		this.incorrectMoveSprite = new DimmingSprite(TextureLookup.redX);
-		this.incorrectMoveSprite.setSize(10 * incorrectMoveSprite.getWidth(), 10 * incorrectMoveSprite.getHeight());
-		this.incorrectMoveSprite.setPosition(Gdx.graphics.getWidth() / 2 - incorrectMoveSprite.getWidth() / 2,
+		this.redX = new DimmingSprite(TextureLookup.redX);
+		this.redX.setSize(10 * redX.getWidth(), 10 * redX.getHeight());
+		this.redX.setPosition(Gdx.graphics.getWidth() / 2 - redX.getWidth() / 2,
 				Gdx.graphics.getHeight() / 2);
-		this.correctMoveSprite = new DimmingSprite(TextureLookup.greenCheckMark);
-		this.correctMoveSprite.setSize(10 * correctMoveSprite.getWidth(), 10 * correctMoveSprite.getHeight());
-		this.correctMoveSprite.setPosition(Gdx.graphics.getWidth() / 2 - correctMoveSprite.getWidth() / 2,
+		this.greenCheck = new DimmingSprite(TextureLookup.greenCheckMark);
+		this.greenCheck.setSize(10 * greenCheck.getWidth(), 10 * greenCheck.getHeight());
+		this.greenCheck.setPosition(Gdx.graphics.getWidth() / 2 - greenCheck.getWidth() / 2,
 				Gdx.graphics.getHeight() / 2);
 
 		this.seed = seed;
@@ -241,8 +241,8 @@ public class SortableArray extends Positionable implements Touchable {
 	}
 
 	public void drawPostSprites(SpriteBatch batch) {
-		incorrectMoveSprite.draw(batch);
-		correctMoveSprite.draw(batch);
+		redX.draw(batch);
+		greenCheck.draw(batch);
 	}
 
 	@Override
@@ -254,8 +254,8 @@ public class SortableArray extends Positionable implements Touchable {
 		}
 		stepMarker.logic();
 		iterationMarker.logic();
-		incorrectMoveSprite.logic();
-		correctMoveSprite.logic();
+		redX.logic();
+		greenCheck.logic();
 
 		handleReversingItems();
 		handleCorrectingItems();
@@ -358,7 +358,7 @@ public class SortableArray extends Positionable implements Touchable {
 		interpolatingItem.setInterpolatePoint(loc.x, loc.y);
 		VisualColumn casted = (VisualColumn) interpolatingItem;
 		if (casted != null) {
-			casted.setOverrideColor(color);
+			casted.setInterpolateColor(color);
 		}
 	}
 
@@ -475,7 +475,7 @@ public class SortableArray extends Positionable implements Touchable {
 		}
 	}
 
-	private int getIndex(Draggable element) {
+	protected int getIndex(Draggable element) {
 		for (int idx = 0; idx < elements.size(); ++idx) {
 			VisualColumn current = elements.get(idx);
 			if (current == element) {
@@ -682,13 +682,13 @@ public class SortableArray extends Positionable implements Touchable {
 
 		setMarkerLERPToPosition(iterationMarker, solution.iterationIndex);
 		setMarkerLERPToPosition(stepMarker, curStepIdx);
-		correctMoveSprite.startDimming();
+		greenCheck.startDimming();
 	}
 
 	private void reverseUsersLastIncorrectMove() {
 		continueReversingUserMoves = true;
 		reverseLastMove();
-		incorrectMoveSprite.startDimming();
+		redX.startDimming();
 	}
 
 	protected void createSolutionArray() {
