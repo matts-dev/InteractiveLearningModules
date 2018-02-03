@@ -15,6 +15,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 import enigma.engine.Draggable;
+import enigma.engine.DrawableString;
 import enigma.engine.Positionable;
 import enigma.engine.TextureLookup;
 import enigma.engine.Timer;
@@ -34,6 +35,8 @@ public class SortableArray extends Positionable implements Touchable {
 
 	protected Random rng;
 
+	protected DrawableString instruction;
+	
 	protected ShapeRenderer sr;
 	protected Rectangle boundBox;
 	protected float elementWidth;
@@ -117,6 +120,10 @@ public class SortableArray extends Positionable implements Touchable {
 		// positional setup
 		setMarkerToPosition(iterationMarker, 0);
 		setPosition(x, y);
+		
+		instruction = new DrawableString("");
+		instruction.setXY(Gdx.graphics.getWidth() * 0.5f, Gdx.graphics.getHeight() * 0.9f);
+		instruction.startAnimation();
 	}
 
 	public SortableArray(SortableArray toClone) {
@@ -252,6 +259,8 @@ public class SortableArray extends Positionable implements Touchable {
 
 		handleReversingItems();
 		handleCorrectingItems();
+		
+		instruction.animateLogic();
 	}
 
 	private void handleCorrectingItems() {
@@ -524,6 +533,9 @@ public class SortableArray extends Positionable implements Touchable {
 		return iterationIndex >= elements.size();
 	}
 
+	/**
+	 * @return true if this iteration/stackframe is complete; false otherwise.
+	 */
 	protected boolean stepIndexComplete() {
 		throw new RuntimeException("Subclasses are responsible for implementing solving behavior");
 	}
