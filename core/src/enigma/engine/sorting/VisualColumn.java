@@ -25,6 +25,7 @@ public class VisualColumn extends Draggable {
 	protected float interpolateSpeed = Tools.convertSpeedTo60FPSValue(10f);
 
 	private Color overrideColor = new Color();
+	private Color interpolatingColor = Color.GRAY;
 
 	public VisualColumn(float initWidth, float initHeight) {
 		this(0, 0, initWidth, initHeight);
@@ -57,7 +58,12 @@ public class VisualColumn extends Draggable {
 			float b = cacheColor.b;
 			float g = cacheColor.g;
 			float r = cacheColor.r;
-			sr.setColor(overrideColor.r, overrideColor.g, overrideColor.b, overrideColor.a);
+			
+			if(interpolateToPoint && !shouldForceColorOverride() ) {
+				sr.setColor(interpolatingColor.r, interpolatingColor.g, interpolatingColor.b, interpolatingColor.a);
+			} else {
+				sr.setColor(overrideColor.r, overrideColor.g, overrideColor.b, overrideColor.a);
+			}
 			sr.rect(box.getX(), box.getY(), box.getWidth(), box.getHeight());
 			sr.setColor(r, g, b, a);
 		} else {
@@ -162,6 +168,12 @@ public class VisualColumn extends Draggable {
 		this.overrideColor.g =overrideColor.g;
 		this.overrideColor.b =overrideColor.b;
 		this.overrideColor.a =overrideColor.a;
+	}
+	public void setInterpolateColor(Color lerpColor) {
+		this.interpolatingColor.r =lerpColor.r; 
+		this.interpolatingColor.g =lerpColor.g;
+		this.interpolatingColor.b =lerpColor.b;
+		this.interpolatingColor.a =lerpColor.a;
 	}
 	
 	public Color getOverrideColorReference() {

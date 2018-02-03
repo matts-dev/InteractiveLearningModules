@@ -1,9 +1,12 @@
 package enigma.engine.sorting;
 
+import java.util.ArrayList;
 import java.util.Stack;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import enigma.engine.Draggable;
@@ -13,6 +16,8 @@ import enigma.engine.utilities.LERPSprite;
 public class QuickSortableArray extends SortableArray {
 	private static final Color pivotColor = Color.PURPLE;
 	private Stack<IndexInterval> callStack = new Stack<IndexInterval>();
+
+	protected ArrayList<VisualColumn> selectedItems = new ArrayList<VisualColumn>();
 
 	private enum Stage {
 		PICK_PIVOT, // select a pivot
@@ -30,7 +35,7 @@ public class QuickSortableArray extends SortableArray {
 	protected VisualColumn heightChecker;
 
 	protected final String PIVOT_SELECT_PROMPT = "Pick a pivot.";
-	protected final String CACHE_PIVOT_PROMPT = "Move the pivot out of the way.";
+	protected final String CACHE_PIVOT_PROMPT = "Move the pivot out of the way; swap it with something.";
 	protected final String LOW_HIGH_PROMPT = "Search for element larger than pivot.";
 	protected final String HIGH_LOW_PROMPT = "Search for element smaller than pivot.";
 	protected final String SWAP_ELEMENTS_PROMPT = "Swap the incorrectly sized elements.";
@@ -119,7 +124,7 @@ public class QuickSortableArray extends SortableArray {
 		// handle case where pivot has not been chosen (and there are more than 2
 		// elements in range)
 		if (cachedPivot == null) {
-			int middleIndex = (currentCall.maxRangeIndex - currentCall.minRangeIndex) / 2 + currentCall.minRangeIndex;
+			int middleIndex = getPivotIndex(currentCall);
 			cachedPivot = elements.get(middleIndex);
 			cachedPivot.setOverrideColor(pivotColor);
 			cachedPivot.setAlwaysForceColorOverride(true);
@@ -131,6 +136,10 @@ public class QuickSortableArray extends SortableArray {
 		}
 
 		return false;
+	}
+
+	public int getPivotIndex(IndexInterval currentFrame) {
+		return (currentFrame.maxRangeIndex - currentFrame.minRangeIndex) / 2 + currentFrame.minRangeIndex;
 	}
 
 	/**
@@ -341,8 +350,29 @@ public class QuickSortableArray extends SortableArray {
 	}
 
 	protected void IO() {
-		super.IO();
+		if (allowUserInput()) {
+			if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && dragTarget == null) {
 
+				if (!lastMovePlayer) {
+					nextSolveStep(true);
+					lastMovePlayer = false;
+				} else {
+
+					lastMovePlayer = !compareUserAgainstSolution();
+					//
+					// if(!lastMovePlayer) {
+					// //if comparing against solution didn't update any animations (returns false),
+					// //then user was wanting to see next step.
+					// nextSolveStep(true);
+					// }
+				}
+			}
+
+			if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+				reverseLastMove();
+				reverseLastSolutionStep();
+			}
+		}
 	}
 
 	@Override
@@ -405,7 +435,7 @@ public class QuickSortableArray extends SortableArray {
 
 	protected void updateInstruction() {
 		String previousPrompt = instruction.getText();
-		
+
 		switch (stage) {
 		case PICK_PIVOT:
 			instruction.setText(PIVOT_SELECT_PROMPT);
@@ -426,8 +456,8 @@ public class QuickSortableArray extends SortableArray {
 			instruction.setText(POSITION_PIVOT_PROMPT);
 			break;
 		}
-		
-		if (!previousPrompt.equals(instruction.getText())){
+
+		if (!previousPrompt.equals(instruction.getText())) {
 			instruction.startAnimation();
 		}
 	}
@@ -441,6 +471,114 @@ public class QuickSortableArray extends SortableArray {
 		return result;
 	}
 
+	@Override
+	public boolean touchDown(int screenX, int screenY, int pointer, int button, OrthographicCamera camera) {
+		boolean result = super.touchDown(screenX, screenY, pointer, button, camera);
+
+		VisualColumn selected = (VisualColumn) dragTarget;
+		if (selected != null && callStack.size() != 0) {
+			int selectedIndex = getIndex(selected);
+
+			if (stage == Stage.PICK_PIVOT) {
+				if (callStack.peek().indexInInterval(selectedIndex)) {
+					resetSelectedItems();
+					selected.setAlwaysForceColorOverride(true);
+					selected.setOverrideColor(pivotColor);
+					selectedItems.add(selected);
+					lastMovePlayer = true;
+				}
+				dragTarget = null;
+			}
+
+			// for now, just always relase the drag target.
+			// dragTarget = null;
+
+		}
+
+		return result;
+	}
+
+	private void resetSelectedItems() {
+		for (VisualColumn element : elements) {
+			element.setAlwaysForceColorOverride(false);
+		}
+	}
+
+	@Override
+	public boolean touchUp(int screenX, int screenY, int pointer, int button, OrthographicCamera camera) {
+		return super.touchUp(screenX, screenY, pointer, button, camera);
+	}
+
+	@Override
+	public boolean touchDragged(int screenX, int screenY, int pointer, OrthographicCamera camera) {
+		return super.touchDragged(screenX, screenY, pointer, camera);
+	}
+
+	@Override
+	protected boolean compareUserAgainstSolution() {
+		boolean shouldFlagNextMoveComputer = false;
+
+		if (callStack.size() != 0) {
+			IndexInterval currentFrame = callStack.peek();
+			if (stage == Stage.PICK_PIVOT) {
+				handleCompare_PICK_PIVOT(currentFrame);
+			} else if (stage == Stage.CACHE_PIVOT) {
+				handleCompare_CACHE_PIVOT(currentFrame);
+			}
+		}
+		return shouldFlagNextMoveComputer;
+	}
+
+	public void handleCompare_PICK_PIVOT(IndexInterval currentFrame) {
+		int correctPivotIdx = getPivotIndex(currentFrame);
+		VisualColumn correctPivot = elements.get(correctPivotIdx);
+
+		resetSelectedItems();
+		boolean foundElement = false;
+		for (VisualColumn element : selectedItems) {
+			if (element == correctPivot) {
+				foundElement = true;
+				// and go to next step?
+				greenCheck.startDimming();
+				while (stage != Stage.CACHE_PIVOT) {
+					stepIndexComplete();
+				}
+				updateInstruction();
+				break;
+			}
+		}
+		if (!foundElement) {
+			// show red x
+			redX.startDimming();
+		}
+		
+		//always clear moves before going to stage that allows movement.
+		iterationMoveHistory.clear();
+	}
+
+	public void handleCompare_CACHE_PIVOT(IndexInterval currentFrame) {
+		continueReversingUserMoves = false;
+		
+		if(iterationMoveHistory.size() > 1) {
+			redX.startDimming();
+			continueReversingUserMoves = true;
+			reverseLastMove();
+			return;
+		}
+		
+		if(iterationMoveHistory.size() == 1) {
+			MoveHistoryEntry hist = iterationMoveHistory.peek();
+			if(hist.toIndex == currentFrame.minRangeIndex && hist.fromIndex == getPivotIndex(currentFrame)) {
+				greenCheck.startDimming();
+				setMarkerLERPToPosition(iterationMarker, currentFrame.minRangeIndex);
+				stage = Stage.LOW_TO_HIGH_SCAN;
+				updateInstruction();
+			} else {
+				redX.startDimming();
+				reverseLastMove();
+			}
+		}
+	}
 }
 
 class IndexInterval {
@@ -462,6 +600,10 @@ class IndexInterval {
 
 		maxRangeIndex = inclusiveHigher;
 		curHighIdx = maxRangeIndex;
+	}
+
+	public boolean indexInInterval(int testIdx) {
+		return minRangeIndex <= testIdx && maxRangeIndex >= testIdx;
 	}
 }
 
