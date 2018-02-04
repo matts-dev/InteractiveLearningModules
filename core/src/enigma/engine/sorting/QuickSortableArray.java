@@ -385,8 +385,9 @@ public class QuickSortableArray extends SortableArray {
 
 	protected void IO() {
 		if (allowUserInput()) {
-			if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && dragTarget == null) {
-
+			if ((Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || captureEnterEvent()) 
+					&& dragTarget == null) {
+				
 				if (!lastMovePlayer) {
 					nextSolveStep(true);
 					lastMovePlayer = false;
@@ -509,6 +510,11 @@ public class QuickSortableArray extends SortableArray {
 	public boolean touchDown(int screenX, int screenY, int pointer, int button, OrthographicCamera camera) {
 		boolean result = super.touchDown(screenX, screenY, pointer, button, camera);
 
+		//if right click was pressed, don't allow dragging. This will be captured on next loop.
+		if(enterEvent) {
+			dragTarget = null;
+		}
+		
 		VisualColumn selected = (VisualColumn) dragTarget;
 		if (selected != null && callStack.size() != 0) {
 			int selectedIndex = getIndex(selected);

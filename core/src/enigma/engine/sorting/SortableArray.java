@@ -79,6 +79,8 @@ public class SortableArray extends Positionable implements Touchable {
 	protected boolean continueCheckingMoves = false;
 	protected DimmingSprite redX;
 	protected DimmingSprite greenCheck;
+	
+	protected boolean enterEvent = false;
 
 	/**
 	 * Create a visual representation of an array that allows swapping of elements.
@@ -310,6 +312,11 @@ public class SortableArray extends Positionable implements Touchable {
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button, OrthographicCamera camera) {
+		if(button == Input.Buttons.RIGHT) {
+			enterEvent = true;
+			return true;
+		}
+		
 		boolean handled = false;
 		if (allowUserInput()) {
 			Tools.convertMousePointsIntoGameCoordinates(camera, convertedTouchVect);
@@ -349,7 +356,10 @@ public class SortableArray extends Positionable implements Touchable {
 			handled = true;
 		}
 		dragTarget = null;
-		lastMovePlayer = true;
+		
+		if(button == Input.Buttons.LEFT) {
+			lastMovePlayer = true;
+		}
 		return handled;
 	}
 
@@ -485,6 +495,15 @@ public class SortableArray extends Positionable implements Touchable {
 		return -1;
 	}
 
+	protected final boolean captureEnterEvent() {
+		if(enterEvent) {
+			enterEvent = false;
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	// ----------------------------- Solving Methods -------------------
 	protected void setMarkerToPosition(LERPSprite marker, int idx) {
 		if (iterationIndex < elements.size()) {
@@ -542,7 +561,7 @@ public class SortableArray extends Positionable implements Touchable {
 
 	protected void IO() {
 		if (allowUserInput()) {
-			if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && dragTarget == null) {
+			if ((Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || captureEnterEvent()) && dragTarget == null) {
 
 				if (!lastMovePlayer || iterationMoveHistory.size() == 0) {
 					nextSolveStep(true);
