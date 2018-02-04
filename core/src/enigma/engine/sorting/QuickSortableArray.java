@@ -15,7 +15,7 @@ import enigma.engine.TextureLookup;
 import enigma.engine.utilities.LERPSprite;
 
 public class QuickSortableArray extends SortableArray {
-	private static final Color pivotColor = Color.PURPLE;
+	private static final Color pivotColor = new Color(Color.PURPLE);
 	private Stack<IndexInterval> callStack = new Stack<IndexInterval>();
 
 	// protected ArrayList<VisualColumn> selectedItems = new
@@ -46,7 +46,7 @@ public class QuickSortableArray extends SortableArray {
 
 	protected float intervalYOffset = 20f;
 	protected float intervalHeight = 5f;
-	protected Color intervalColor = Color.GRAY; 
+	protected Color intervalColor = new Color(Color.GRAY); 
 	
 	public QuickSortableArray(float x, float y, float elementWidth, int numElements, int maxElementValue, int seed) {
 		super(x, y, elementWidth, numElements, maxElementValue, seed);
@@ -367,7 +367,7 @@ public class QuickSortableArray extends SortableArray {
 			float b = cacheColor.b;
 			float g = cacheColor.g;
 			float r = cacheColor.r;
-			sr.setColor(intervalColor);
+			sr.setColor(intervalColor.r,intervalColor.g,intervalColor.b,intervalColor.a);
 			sr.rect(lower.x, lower.y - intervalYOffset, higher.x - lower.x + elementWidth, intervalHeight);
 			sr.setColor(r, g, b, a);
 		}
@@ -624,6 +624,7 @@ public class QuickSortableArray extends SortableArray {
 	}
 
 	public void handleCompare_PICK_PIVOT(IndexInterval currentFrame) {
+		int callstackSize = callStack.size();
 		int correctPivotIdx = getPivotIndex(currentFrame);
 		VisualColumn correctPivot = elements.get(correctPivotIdx);
 
@@ -633,9 +634,19 @@ public class QuickSortableArray extends SortableArray {
 			foundElement = true;
 			// and go to next step?
 			greenCheck.startDimming();
-			while (stage == Stage.PICK_PIVOT) {
+			
+			//the base cases (2 elements) will just pop off the stack in SELECT_PIVOT set, 
+			//So, we need to checkt to see if call stack was modified in loop
+			while (stage == Stage.PICK_PIVOT && callstackSize == callStack.size()) {
 				stepIndexComplete();
 			}
+			
+			//clear selected if we skipped a frame
+			if (callstackSize != callStack.size()) {
+				selectedItems.clear();
+			}
+			
+			
 			updateInstruction();
 		}
 		if (!foundElement) {
@@ -835,6 +846,7 @@ public class QuickSortableArray extends SortableArray {
 			//if the indices are passed one another, no swapping is needed (also make sure they didn't make a move)
 			correct |= currentFrame.curHighIdx <= currentFrame.curLowIdx && iterationMoveHistory.size() == 0;
 
+			//check that high and low ptrs are what the user swapped.
 			if (iterationMoveHistory.size() == 1) {
 				MoveHistoryEntry hist = iterationMoveHistory.peek();
 				correct |= hist.toIndex == currentFrame.curHighIdx && hist.fromIndex == currentFrame.curLowIdx
@@ -844,18 +856,29 @@ public class QuickSortableArray extends SortableArray {
 			if (correct) {
 				greenCheck.startDimming();
 
-				// -----
-				if (currentFrame.curLowIdx < currentFrame.curHighIdx) {
+				// Check if there is more swapping to be done 
+				if (currentFrame.curLowIdx < currentFrame.curHighIdx ) {
+					boolean ptrsWereAdjacent = currentFrame.curLowIdx == currentFrame.curHighIdx - 1;
+					
 					// *do not* change these values before position pivot check
 					// position pivot requires old values before swap.
 					currentFrame.curLowIdx++;
 					currentFrame.curHighIdx--;
-					stage = Stage.LOW_TO_HIGH_SCAN;
+					
+					//(note: if swapped indices adjacent, go to position pivot after ptr increments)
+					if(ptrsWereAdjacent) {
+						setMarkerLERPToPosition(lowMarker, currentFrame.curLowIdx);
+						setMarkerLERPToPosition(highMarker, currentFrame.curHighIdx);
+						stage = Stage.POSITION_PIVOT;
+					} else {
+						stage = Stage.LOW_TO_HIGH_SCAN;
+					}
+					
 				} else {
 					stage = Stage.POSITION_PIVOT;
 				}
 				iterationMoveHistory.clear();
-				// ------------
+
 
 				updateInstruction();
 			} else {
@@ -865,9 +888,6 @@ public class QuickSortableArray extends SortableArray {
 		}
 	}
 
-	/**
-	 * @param currentFrame
-	 */
 	private void handleCompare_POSITION_PIVOT(IndexInterval currentFrame) {
 		continueReversingUserMoves = false;
 
@@ -880,8 +900,12 @@ public class QuickSortableArray extends SortableArray {
 
 		if (iterationMoveHistory.size() == 1 || iterationMoveHistory.size() == 0) {
 			boolean correct = false;
-			//correct |= currentFrame...
+			
+			//NOTE: it shouldn't be possible for the correct pivot loc to be where we cached it.
+			//if pivot is already in the correct position, then don't require a swap.
+			//correct |= getPivotCacheLocation(currentFrame) == currentFrame.curHighIdx && iterationMoveHistory.size() == 0;
 
+			
 			if (iterationMoveHistory.size() == 1) {
 				MoveHistoryEntry hist = iterationMoveHistory.peek();
 				correct |= hist.toIndex == getPivotCacheLocation(currentFrame) && hist.fromIndex == currentFrame.curHighIdx
