@@ -25,7 +25,7 @@ public class VisualColumn extends Draggable {
 	protected float interpolateSpeed = Tools.convertSpeedTo60FPSValue(10f);
 
 	private Color overrideColor = new Color();
-	private Color interpolatingColor = Color.GRAY;
+	private Color interpolatingColor = new Color(Color.GRAY);
 
 	public VisualColumn(float initWidth, float initHeight) {
 		this(0, 0, initWidth, initHeight);
