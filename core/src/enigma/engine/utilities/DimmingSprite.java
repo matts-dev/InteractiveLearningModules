@@ -24,4 +24,8 @@ public class DimmingSprite extends Sprite{
 			setAlpha(0.0f);
 		}
 	}
+
+	public void cancelDimming() {
+		dimStart = 0;
+	}
 }
