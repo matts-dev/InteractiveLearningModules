@@ -13,6 +13,8 @@ import enigma.engine.CourseModule;
 import enigma.engine.Draggable;
 import enigma.engine.TextureLookup;
 
+enum SortType{SELECTION, INSERTION, QUICK}
+
 public class SortModule extends CourseModule {
 	/** a vector to hold converted touch coordinates into game world coordinates */
 	//private Vector3 convertedTouchVect = new Vector3(0, 0, 0);
@@ -25,6 +27,8 @@ public class SortModule extends CourseModule {
 	private float elementWidth = 30;
 	private int numElements;
 	private Random rng;
+	
+	private SortType sortType = SortType.QUICK;
 
 	/**
 	 * Constructor
@@ -47,7 +51,14 @@ public class SortModule extends CourseModule {
 	private void createNewArray() {
 		//array = new InsertionSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10, rng.nextInt());
 		//array = new SelectionSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10, rng.nextInt());
-		array = new QuickSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10, rng.nextInt());
+		
+		if(sortType == SortType.QUICK) {
+			array = new QuickSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10, rng.nextInt());
+		} else if(sortType == SortType.INSERTION) {
+			array = new InsertionSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10, rng.nextInt());
+		} else if(sortType == SortType.SELECTION) {
+			array = new SelectionSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10, rng.nextInt());
+		}
 		array.centerOnPoint(Gdx.graphics.getWidth() * .5f, Gdx.graphics.getHeight() * .2f);
 	}
 
@@ -55,6 +66,8 @@ public class SortModule extends CourseModule {
 	public void logic() {
 		super.logic();
 		array.logic();
+		
+		
 	}
 
 	@Override
@@ -72,10 +85,19 @@ public class SortModule extends CourseModule {
 		}
 
 		if (devMode && Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)) {
-			if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_0)) {
-
+			if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
+				sortType = SortType.SELECTION;
+				createNewArray();
 			}
-			if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_9)) {
+			if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
+				sortType = SortType.INSERTION;
+				createNewArray();
+			}
+			if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
+				sortType = SortType.QUICK;
+				createNewArray();
+			}
+			if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_4)) {
 
 			}
 		}
