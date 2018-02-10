@@ -22,7 +22,6 @@ import enigma.engine.Timer;
 import enigma.engine.Tools;
 import enigma.engine.Touchable;
 import enigma.engine.utilities.DimmingSprite;
-import enigma.engine.utilities.LERPSprite;
 
 /**
  * A visual representation of an array that allows swapping of elements.
@@ -51,8 +50,8 @@ public class SortableArray extends Positionable implements Touchable {
 	// Marks the current iteration
 	private boolean drawIterationMarker = false;
 	private boolean drawStepMarker = false;
-	protected LERPSprite iterationMarker;
-	protected LERPSprite stepMarker;
+	protected Marker iterationMarker;
+	protected Marker stepMarker;
 	protected int iterationIndex = 0;
 	protected int stepIndex = 0;
 	protected Stack<MoveHistoryEntry> iterationMoveHistory;
@@ -135,8 +134,8 @@ public class SortableArray extends Positionable implements Touchable {
 		centerOnPoint(getX(), getY());
 	}
 
-	protected LERPSprite configureMarker(Color color) {
-		LERPSprite sprite = new LERPSprite(TextureLookup.arrowUpSmall);
+	protected Marker configureMarker(Color color) {
+		Marker sprite = new Marker(TextureLookup.arrowUpSmall);
 		sprite.setColor(color);
 		sprite.setSize(elementWidth, sprite.getHeight());
 		return sprite;
@@ -505,17 +504,18 @@ public class SortableArray extends Positionable implements Touchable {
 	}
 	
 	// ----------------------------- Solving Methods -------------------
-	protected void setMarkerToPosition(LERPSprite marker, int idx) {
+	protected void setMarkerToPosition(Marker marker, int idx) {
 		if (iterationIndex < elements.size()) {
 			Vector2 loc = arrayIndexPositions.get(idx);
 			marker.setPosition(loc.x, loc.y - marker.getHeight() * 1.5f);
+			marker.setIndexlocation(idx);
 		}
 	}
 
-	protected void setMarkerLERPToPosition(LERPSprite marker, int idx) {
+	protected void setMarkerLERPToPosition(Marker marker, int idx) {
 		if (idx < elements.size()) {
 			Vector2 loc = arrayIndexPositions.get(idx);
-			marker.setInterpolatePoint(loc.x, loc.y - marker.getHeight() * 1.5f);
+			marker.setInterpolatePoint(loc.x, loc.y - marker.getHeight() * 1.5f, idx);
 		}
 	}
 
