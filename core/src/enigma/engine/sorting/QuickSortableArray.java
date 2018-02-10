@@ -12,7 +12,6 @@ import com.badlogic.gdx.math.Vector2;
 
 import enigma.engine.Draggable;
 import enigma.engine.TextureLookup;
-import enigma.engine.utilities.LERPSprite;
 
 public class QuickSortableArray extends SortableArray {
 	private static final Color pivotColor = new Color(Color.PURPLE);
@@ -33,8 +32,8 @@ public class QuickSortableArray extends SortableArray {
 
 	private Stage stage = Stage.PICK_PIVOT;
 	private VisualColumn cachedPivot = null;
-	protected LERPSprite lowMarker;
-	protected LERPSprite highMarker;
+	protected Marker lowMarker;
+	protected Marker highMarker;
 	protected VisualColumn heightChecker;
 
 	protected final String PIVOT_SELECT_PROMPT = "Pick a pivot.";
@@ -170,15 +169,7 @@ public class QuickSortableArray extends SortableArray {
 	 */
 	private boolean stepIndexComplete_LOW_TO_HIGH_SCAN(IndexInterval currentCall) {
 		if (!currentCall.highAndLowMarkersPlaced) {
-			setMarkerToPosition(lowMarker, currentCall.minRangeIndex + 1);
-			setMarkerToPosition(highMarker, currentCall.maxRangeIndex);
-			lowMarker.translate(-Gdx.graphics.getWidth() / 2, 0);
-			highMarker.translate(Gdx.graphics.getWidth() / 2, 0);
-
-			setMarkerLERPToPosition(lowMarker, currentCall.minRangeIndex + 1);
-			setMarkerLERPToPosition(highMarker, currentCall.maxRangeIndex);
-
-			currentCall.highAndLowMarkersPlaced = true;
+			animateMarkersToPositionAndUpdateFrame(currentCall);
 		} else { // DO LOW_TO_HIGH SCAN
 			// CHECK IF STATE SHOULD CHANGE
 			if (currentCall.curLowIdx > currentCall.maxRangeIndex) {
@@ -539,7 +530,7 @@ public class QuickSortableArray extends SortableArray {
 	public void handleTouchDown_SELECT_PIVOT(IndexInterval curFrame, int selectedIndex, VisualColumn selected) {
 		// check that selecion is within the active interval
 		if (curFrame.indexInInterval(selectedIndex)) {
-			resetSelectedItems();
+			resetSelectedItemsWithoutRemoval();
 			selected.setAlwaysForceColorOverride(true);
 			selected.setOverrideColor(pivotColor);
 			selectedItems.add(selected);
@@ -549,8 +540,15 @@ public class QuickSortableArray extends SortableArray {
 	}
 
 	public void handleTouchDown_LOW_TO_HIGH(IndexInterval curFrame, int selectedIndex, VisualColumn selected) {
+		if(!curFrame.highAndLowMarkersPlaced) {
+			animateMarkersToPositionAndUpdateFrame(curFrame);
+			dragTarget = null;
+			return; 
+		}
+		
 		// check that selection is within the active interval
-		if (curFrame.indexInInterval(selectedIndex) && selectedIndex != getPivotCacheLocation(curFrame)) {
+		if (curFrame.indexInInterval(selectedIndex) && selectedIndex != getPivotCacheLocation(curFrame)
+				&& selectedIndex >= curFrame.curLowIdx) {
 			// if user hasn't selected before, then add it as selection.
 			if (!selectedItems.contains(selected)) {
 				selected.setAlwaysForceColorOverride(true);
@@ -573,7 +571,7 @@ public class QuickSortableArray extends SortableArray {
 
 		// check that selection is within the active interval
 		if (curFrame.indexInInterval(selectedIndex) && selectedIndex != getPivotCacheLocation(curFrame)
-				&& !selectedIsRed) {
+				&& !selectedIsRed && selectedIndex <= curFrame.curHighIdx) {
 			// if user hasn't selected before, then add it as selection.
 			if (!selectedItems.contains(selected)) {
 				selected.setAlwaysForceColorOverride(true);
@@ -590,7 +588,7 @@ public class QuickSortableArray extends SortableArray {
 		dragTarget = null;
 	}
 
-	private void resetSelectedItems() {
+	private void resetSelectedItemsWithoutRemoval() {
 		for (VisualColumn element : selectedItems) {
 			element.setAlwaysForceColorOverride(false);
 		}
@@ -634,7 +632,7 @@ public class QuickSortableArray extends SortableArray {
 		int correctPivotIdx = getPivotIndex(currentFrame);
 		VisualColumn correctPivot = elements.get(correctPivotIdx);
 
-		resetSelectedItems();
+		resetSelectedItemsWithoutRemoval();
 		boolean foundElement = false;
 		if (selectedItems.contains(correctPivot)) {
 			foundElement = true;
@@ -744,7 +742,7 @@ public class QuickSortableArray extends SortableArray {
 		
 		//check that they did not highlight elements below the stopping/swap point.
 		if(readyForNextStage) {
-			for(int idx = currentFrame.curLowIdx + 1; idx < currentFrame.maxRangeIndex && idx < currentFrame.curHighIdx; idx++) {
+			for(int idx = currentFrame.curLowIdx + 1; idx < currentFrame.maxRangeIndex && idx <= currentFrame.curHighIdx; idx++) {
 				VisualColumn ele = elements.get(idx);
 				if(ele.shouldForceColorOverride()) {
 					ele.setAlwaysForceColorOverride(false);
@@ -829,7 +827,10 @@ public class QuickSortableArray extends SortableArray {
 			// We're at the end of the array, force the next step (high to low)
 			// while(stage != Stage.SWAP && stage != Stage.POSITION_PIVOT) {
 			while (stage == Stage.HIGH_TO_LOW_SCAN) {
-				stepIndexComplete();
+				//set flag to false so correction doesn't automatically do next swap step.
+				atLeastOneCallHighToLow = false;
+				stepIndexComplete_HIGH_TO_LOW_SCAN(currentFrame);
+				//stepIndexComplete();
 			}
 			updateInstruction();
 
@@ -849,14 +850,21 @@ public class QuickSortableArray extends SortableArray {
 		if (iterationMoveHistory.size() == 1 || iterationMoveHistory.size() == 0) {
 			boolean correct = false;
 			
-			//if the indices are passed one another, no swapping is needed (also make sure they didn't make a move)
-			correct |= currentFrame.curHighIdx <= currentFrame.curLowIdx && iterationMoveHistory.size() == 0;
-
 			//check that high and low ptrs are what the user swapped.
 			if (iterationMoveHistory.size() == 1) {
 				MoveHistoryEntry hist = iterationMoveHistory.peek();
 				correct |= hist.toIndex == currentFrame.curHighIdx && hist.fromIndex == currentFrame.curLowIdx
 						|| hist.toIndex == currentFrame.curLowIdx && hist.fromIndex == currentFrame.curHighIdx;
+			}
+			
+			//if the indices are passed one another, no swapping is needed 
+			if(currentFrame.curHighIdx <= currentFrame.curLowIdx ) {
+				//make sure they didn't make a move in this case
+				if (iterationMoveHistory.size() == 0) {
+					correct = true;
+				}else {
+					correct = false;
+				}
 			}
 
 			if (correct) {
@@ -877,6 +885,7 @@ public class QuickSortableArray extends SortableArray {
 						setMarkerLERPToPosition(highMarker, currentFrame.curHighIdx);
 						stage = Stage.POSITION_PIVOT;
 					} else {
+						lerpMarkersToCorrectPositions(currentFrame);
 						stage = Stage.LOW_TO_HIGH_SCAN;
 					}
 					
@@ -924,7 +933,8 @@ public class QuickSortableArray extends SortableArray {
 				updateInstruction();
 				VisualColumn cachedPivot = elements.get(getPivotCacheLocation(currentFrame));
 				selectedItems.remove(cachedPivot);
-				resetSelectedItems();
+				resetSelectedItemsWithoutRemoval();
+				selectedItems.clear();
 			} else {
 				redX.startDimming();
 				reverseLastMove();
@@ -936,6 +946,29 @@ public class QuickSortableArray extends SortableArray {
 	private int getPivotCacheLocation(IndexInterval currentFrame) {
 		return currentFrame.minRangeIndex;
 	}
+
+//	private boolean checkMarkersValid(IndexInterval currentFrame) {
+//		return lowMarker.getPointingIndexLocation() == currentFrame.curLowIdx 
+//				&& highMarker.getPointingIndexLocation() == currentFrame.curHighIdx;
+//	}
+	
+	private void lerpMarkersToCorrectPositions(IndexInterval currentFrame) {
+		setMarkerLERPToPosition(lowMarker, currentFrame.curLowIdx);
+		setMarkerLERPToPosition(highMarker, currentFrame.curHighIdx);
+	}
+	
+	private void animateMarkersToPositionAndUpdateFrame(IndexInterval currentCall) {
+		setMarkerToPosition(lowMarker, currentCall.minRangeIndex + 1);
+		setMarkerToPosition(highMarker, currentCall.maxRangeIndex);
+		lowMarker.translate(-Gdx.graphics.getWidth() / 2, 0);
+		highMarker.translate(Gdx.graphics.getWidth() / 2, 0);
+
+		setMarkerLERPToPosition(lowMarker, currentCall.minRangeIndex + 1);
+		setMarkerLERPToPosition(highMarker, currentCall.maxRangeIndex);
+
+		currentCall.highAndLowMarkersPlaced = true;
+	}
+
 }
 
 // ------------------------- HELPER CLASSES ----------------------------------

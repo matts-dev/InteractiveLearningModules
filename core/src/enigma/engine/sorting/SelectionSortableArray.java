@@ -5,10 +5,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import enigma.engine.Draggable;
 import enigma.engine.TextureLookup;
-import enigma.engine.utilities.LERPSprite;
 
 public class SelectionSortableArray extends SortableArray{
-	protected LERPSprite swapMarker;
+	protected Marker swapMarker;
 	private int currentMinimum;
 	private int currentMinimumIdx;
 	private boolean shouldSwapAfterIteration = true;
