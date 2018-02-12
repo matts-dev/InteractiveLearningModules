@@ -29,6 +29,7 @@ public class SortModule extends CourseModule {
 	private Random rng;
 	
 	private SortType sortType = SortType.QUICK;
+	private TutorialManager tutorialManager;
 
 	/**
 	 * Constructor
@@ -65,9 +66,13 @@ public class SortModule extends CourseModule {
 	@Override
 	public void logic() {
 		super.logic();
-		array.logic();
-		
-		
+		if(tutorialManager != null && tutorialManager.active()) {
+			tutorialManager.logic();
+			array.logic();
+		} else {
+			array.IO();
+			array.logic();
+		}
 	}
 
 	@Override
@@ -97,14 +102,36 @@ public class SortModule extends CourseModule {
 				sortType = SortType.QUICK;
 				createNewArray();
 			}
-			if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_4)) {
-
+			if (Gdx.input.isKeyJustPressed(Input.Keys.I)) {
+				startTutorialManager();
 			}
+			if (Gdx.input.isKeyJustPressed(Input.Keys.O)) {
+				int maxElementValue = 10;
+				int max = maxElementValue;
+				int[] sourceArray = {
+						(int) (max * .5), 
+						(int) (max * .3), 
+						(int) (max * .6), 
+						(int) (max * .7),
+						(int) (max * 1),
+						(int) (max * .2),
+						(int) (max * .9)
+						};
+				
+				array = new QuickSortableArray(Gdx.graphics.getWidth() / 2, 200, elementWidth, maxElementValue, sourceArray);
+				array.centerOnPoint(Gdx.graphics.getWidth() * .5f, Gdx.graphics.getHeight() * .2f);
+			}
+			
 		}
 		if (Gdx.input.isKeyJustPressed(Input.Keys.N)) {
 			createNewArray();
 		}
 
+	}
+
+	private void startTutorialManager() {
+		tutorialManager = array.getTutorialManager(Gdx.graphics.getWidth() / 2, 200, elementWidth, numElements, 10);
+		array = tutorialManager.getArray();
 	}
 
 	@Override
@@ -144,17 +171,28 @@ public class SortModule extends CourseModule {
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		return array.touchDown(screenX, screenY, pointer, button, camera);
+		if(tutorialManager != null && tutorialManager.active()){
+			return tutorialManager.touchDown(screenX, screenY, pointer, button, camera);
+		} else {
+			return array.touchDown(screenX, screenY, pointer, button, camera);
+		}
 	}
 
 	@Override
 	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-		return array.touchUp(screenX, screenY, pointer, button, camera);
+		if(tutorialManager != null && tutorialManager.active()){
+			return tutorialManager.touchUp(screenX, screenY, pointer, button, camera);
+		} else {
+			return array.touchUp(screenX, screenY, pointer, button, camera);
+		}	
 	}
 
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer) {
-		return array.touchDragged(screenX, screenY, pointer, camera);
-		
+		if(tutorialManager != null && tutorialManager.active()){	
+			return tutorialManager.touchDragged(screenX, screenY, pointer, camera);
+		} else {
+			return array.touchDragged(screenX, screenY, pointer, camera);
+		}
 	}
 }

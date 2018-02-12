@@ -134,6 +134,69 @@ public class SortableArray extends Positionable implements Touchable {
 		centerOnPoint(getX(), getY());
 	}
 
+	
+	/**
+	 * Creating an array in this manner will not be cloneable.
+	 * 
+	 * @param x
+	 * @param y
+	 * @param elementWidth2
+	 * @param maxElementValue2
+	 * @param sourceArray
+	 */
+	public SortableArray(float x, float y, float elementWidth, int maxElementValue, int[] sourceArray) {
+		float initWidth = elementWidth * sourceArray.length;
+		this.elementWidth = elementWidth;
+		this.spacingWidth = elementWidth;
+
+		this.redX = new DimmingSprite(TextureLookup.redX);
+		this.redX.setSize(10 * redX.getWidth(), 10 * redX.getHeight());
+		this.redX.setPosition(Gdx.graphics.getWidth() / 2 - redX.getWidth() / 2,
+				Gdx.graphics.getHeight() / 2);
+		this.greenCheck = new DimmingSprite(TextureLookup.greenCheckMark);
+		this.greenCheck.setSize(10 * greenCheck.getWidth(), 10 * greenCheck.getHeight());
+		this.greenCheck.setPosition(Gdx.graphics.getWidth() / 2 - greenCheck.getWidth() / 2,
+				Gdx.graphics.getHeight() / 2);
+
+		rng = new Random(seed);
+
+		sr = TextureLookup.shapeRenderer;
+		boundBox = new Rectangle(x, y, initWidth, SortableArray.MAX_HEIGHT);
+
+		iterationMarker = configureMarker(Color.DARK_GRAY);
+		stepMarker = configureMarker(Color.YELLOW);
+
+		this.maxElementValue = maxElementValue;
+		
+		int numElements = sourceArray.length;
+		
+		elements = new ArrayList<VisualColumn>(numElements);
+		originalOrderingElements = new ArrayList<VisualColumn>(numElements);
+		arrayIndexPositions = new ArrayList<Vector2>(numElements);
+
+		for (int idx = 0; idx < numElements; ++idx) {
+			int elementValue = sourceArray[idx];
+			VisualColumn vc = new VisualColumn(0, 0, elementValue, maxElementValue, MAX_HEIGHT, elementWidth);
+			vc.setPosition(getX() + idx * (elementWidth + spacingWidth), getY());
+			elements.add(vc);
+			originalOrderingElements.add(vc);
+
+			Vector2 arraySlot = new Vector2(vc.getX(), vc.getY());
+			arrayIndexPositions.add(arraySlot);
+		}
+
+		iterationMoveHistory = new Stack<MoveHistoryEntry>();
+
+		// positional setup
+		setMarkerToPosition(iterationMarker, 0);
+		setPosition(x, y);
+		
+		instruction = new DrawableString("");
+		instruction.setXY(Gdx.graphics.getWidth() * 0.5f, Gdx.graphics.getHeight() * 0.9f);
+		instruction.startAnimation();
+
+	}
+
 	protected Marker configureMarker(Color color) {
 		Marker sprite = new Marker(TextureLookup.arrowUpSmall);
 		sprite.setColor(color);
@@ -248,7 +311,7 @@ public class SortableArray extends Positionable implements Touchable {
 
 	@Override
 	public void logic() {
-		IO();
+		//IO(); //IO will be called separately now
 
 		for (VisualColumn element : elements) {
 			element.logic();
@@ -738,5 +801,13 @@ public class SortableArray extends Positionable implements Touchable {
 
 	public void setDrawIterationMarker(boolean drawIterationMarker) {
 		this.drawIterationMarker = drawIterationMarker;
+	}
+
+	public TutorialManager getTutorialManager(float x, float y, float elementWidth, int numElements, int maxElementValue) {
+		throw new RuntimeException("The default array does not support get tutorialManager");
+	}
+
+	public void overrideInstructionTo(String string) {
+		throw new RuntimeException("Override Instruction Not Implemented");
 	}
 }
