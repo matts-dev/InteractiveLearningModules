@@ -555,6 +555,15 @@ public class QuickSortableArray extends SortableArray {
 	}
 
 	public void handleTouchDown_SELECT_PIVOT(IndexInterval curFrame, int selectedIndex, VisualColumn selected) {
+		//special base case handling
+		if (curFrame.minRangeIndex + 1 == curFrame.maxRangeIndex) {
+			resetSelectedItemsWithoutRemoval();
+			selectedItems.clear();
+			lastMovePlayer = true;
+			return;
+		}
+		
+		
 		// check that selection is within the active interval
 		if (curFrame.indexInInterval(selectedIndex)) {
 			resetSelectedItemsWithoutRemoval();
@@ -691,13 +700,26 @@ public class QuickSortableArray extends SortableArray {
 	}
 
 	public boolean handleCompare_PICK_PIVOT(IndexInterval currentFrame) {
+
 		int preCallStackSize = callStack.size();
 		int correctPivotIdx = getPivotIndex(currentFrame);
 		VisualColumn correctPivot = elements.get(correctPivotIdx);
-
-		resetSelectedItemsWithoutRemoval();
 		boolean foundElement = false;
-		if (selectedItems.contains(correctPivot)) {
+		boolean correctlySwappedBaseCase = false;
+
+		//special base case logic.
+		if (currentFrame.minRangeIndex + 1 == currentFrame.maxRangeIndex) {
+			// special base case (2 elements) handling
+			// simply check that they are in the right order
+			VisualColumn minEle = elements.get(currentFrame.minRangeIndex);
+			VisualColumn maxEle = elements.get(currentFrame.maxRangeIndex);
+			if (minEle.getValue() <= maxEle.getValue()) {
+				correctlySwappedBaseCase = true;
+			} 
+		}
+		
+		resetSelectedItemsWithoutRemoval();
+		if (selectedItems.contains(correctPivot) || correctlySwappedBaseCase) {
 			foundElement = true;
 			// and go to next step?
 			greenCheck.startDimming();
