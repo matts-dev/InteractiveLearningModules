@@ -37,10 +37,12 @@ public class QuickSortableArray extends SortableArray {
 	protected Marker highMarker;
 	protected VisualColumn heightChecker;
 
+
+	protected boolean allowPromptUpdate = true;
 	protected final String PIVOT_SELECT_PROMPT = "Pick a pivot.";
-	protected final String CACHE_PIVOT_PROMPT = "Move the pivot out of the way; swap it with something.";
-	protected final String LOW_HIGH_PROMPT = "Scan over elements smaller than pivot.";
-	protected final String HIGH_LOW_PROMPT = "Scan over elements larger than pivot.";
+	protected final String CACHE_PIVOT_PROMPT = "Move the pivot out of the way; swap it with an element.";
+	protected final String LOW_HIGH_PROMPT = "Scan right over elements smaller than pivot.";
+	protected final String HIGH_LOW_PROMPT = "Scan left over elements larger than pivot.";
 	protected final String SWAP_ELEMENTS_PROMPT = "Swap incorrectly positioned elements, if needed.";
 	protected final String POSITION_PIVOT_PROMPT = "Position the pivot back into the array.";
 
@@ -48,7 +50,6 @@ public class QuickSortableArray extends SortableArray {
 	protected float intervalHeight = 5f;
 	protected Color intervalColor = new Color(Color.GRAY);
 
-	private boolean allowPromptUpdate;
 
 	public QuickSortableArray(float x, float y, float elementWidth, int numElements, int maxElementValue, int seed) {
 		super(x, y, elementWidth, numElements, maxElementValue, seed);
@@ -316,6 +317,15 @@ public class QuickSortableArray extends SortableArray {
 			}
 		}
 
+		return false;
+	}
+	
+	public boolean attemptSwapStep(boolean disableStepSkip) {
+		
+		if(stage == Stage.SWAP && callStack.size() != 0) {
+			stepIndexComplete_SWAP(callStack.peek(), disableStepSkip);
+			return true;
+		}
 		return false;
 	}
 
@@ -681,7 +691,7 @@ public class QuickSortableArray extends SortableArray {
 	}
 
 	public boolean handleCompare_PICK_PIVOT(IndexInterval currentFrame) {
-		int callstackSize = callStack.size();
+		int preCallStackSize = callStack.size();
 		int correctPivotIdx = getPivotIndex(currentFrame);
 		VisualColumn correctPivot = elements.get(correctPivotIdx);
 
@@ -694,12 +704,12 @@ public class QuickSortableArray extends SortableArray {
 
 			// the base cases (2 elements) will just pop off the stack in SELECT_PIVOT set,
 			// So, we need to checkt to see if call stack was modified in loop
-			while (stage == Stage.PICK_PIVOT && callstackSize == callStack.size()) {
+			while (stage == Stage.PICK_PIVOT && preCallStackSize == callStack.size()) {
 				stepIndexComplete(true);
 			}
 
-			// clear selected if we skipped a frame
-			if (callstackSize != callStack.size()) {
+			// clear selected if we skipped a stack frame
+			if (preCallStackSize != callStack.size()) {
 				selectedItems.clear();
 			}
 
@@ -1132,7 +1142,7 @@ public class QuickSortableArray extends SortableArray {
 		return instruction.isAnimating();
 	}
 
-	public void setToggleSoltionSolver(boolean enableOrDisable) {
+	public void setToggleSolutionSolver(boolean enableOrDisable) {
 		allowStepSolver = enableOrDisable;
 	}
 
@@ -1158,6 +1168,14 @@ public class QuickSortableArray extends SortableArray {
 			return peek.curHighIdx;
 		}
 		return -1;
+	}
+
+	public IndexInterval peekCurrentStackFrame() {
+		if(callStack.size() != 0)
+		{
+			return callStack.peek();
+		}
+		return null;
 	}
 }
 
