@@ -17,7 +17,7 @@ public class LERPSprite extends Sprite {
 	public LERPSprite(Texture texture) {
 		super(texture);
 	}
-
+	
 	public void logic() {
 		if (interpolateToPoint) {
 			float deltaSpeed = interpolateSpeed * Gdx.graphics.getDeltaTime();
@@ -48,5 +48,9 @@ public class LERPSprite extends Sprite {
 	
 	public boolean isInterpolating() {
 		return interpolateToPoint;
+	}
+	
+	public void setInterpolateSpeedFactor(float factor) {
+		interpolateSpeed = Tools.convertSpeedTo60FPSValue(factor);
 	}
 }

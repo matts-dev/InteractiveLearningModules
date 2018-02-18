@@ -124,6 +124,11 @@ public class SortModule extends CourseModule {
 			
 		}
 		if (Gdx.input.isKeyJustPressed(Input.Keys.N)) {
+			numElements = rng.nextInt(3) + 7;
+			createNewArray();
+		}
+		if (Gdx.input.isKeyJustPressed(Input.Keys.B)) {
+			numElements = rng.nextInt(3) + 12;
 			createNewArray();
 		}
 
