@@ -22,6 +22,8 @@ import enigma.engine.Timer;
 import enigma.engine.Tools;
 import enigma.engine.Touchable;
 import enigma.engine.utilities.DimmingSprite;
+import enigma.engine.utilities.KeybindDisplay;
+import enigma.engine.utilities.Tuple2;
 
 /**
  * A visual representation of an array that allows swapping of elements.
@@ -80,6 +82,7 @@ public class SortableArray extends Positionable implements Touchable {
 	protected DimmingSprite greenCheck;
 	
 	protected boolean enterEvent = false;
+	protected KeybindDisplay kbDisplay;
 
 	/**
 	 * Create a visual representation of an array that allows swapping of elements.
@@ -125,6 +128,9 @@ public class SortableArray extends Positionable implements Touchable {
 		instruction = new DrawableString("");
 		instruction.setXY(Gdx.graphics.getWidth() * 0.5f, Gdx.graphics.getHeight() * 0.9f);
 		instruction.startAnimation();
+		
+		generateKeybindDisplay();
+
 	}
 
 	public SortableArray(SortableArray toClone) {
@@ -194,6 +200,8 @@ public class SortableArray extends Positionable implements Touchable {
 		instruction = new DrawableString("");
 		instruction.setXY(Gdx.graphics.getWidth() * 0.5f, Gdx.graphics.getHeight() * 0.9f);
 		instruction.startAnimation();
+		
+		generateKeybindDisplay();
 
 	}
 
@@ -307,11 +315,12 @@ public class SortableArray extends Positionable implements Touchable {
 	public void drawPostSprites(SpriteBatch batch) {
 		redX.draw(batch);
 		greenCheck.draw(batch);
+		kbDisplay.draw(batch);
 	}
 
 	@Override
 	public void logic() {
-		//IO(); //IO will be called separately now
+		kbDisplay.logic();
 
 		for (VisualColumn element : elements) {
 			element.logic();
@@ -780,11 +789,32 @@ public class SortableArray extends Positionable implements Touchable {
 		throw new RuntimeException(
 				"This method should be provided by a subclass. However it should not make the entire sortable array abstract.");
 	}
+	
+	
+	protected void populateKeybindDisplay(ArrayList<Tuple2<String, String>> keyActionPairs) {
+	}
+	
+	private void generateKeybindDisplay() {
+		ArrayList<Tuple2<String, String>> keyActionPairs = new ArrayList<Tuple2<String,String>>();
+		populateKeybindDisplay(keyActionPairs);
+		keyActionPairs.add(new Tuple2<String, String>("Space", "Show/Hide keybinds menu."));
+		
+		float centerX = Gdx.graphics.getWidth()/2;
+		float centerY = Gdx.graphics.getHeight() /2;
+		
+		float width = Gdx.graphics.getWidth() * 0.95f;
+		float height = Gdx.graphics.getHeight() * 0.95f;
+		
+		kbDisplay = new KeybindDisplay(keyActionPairs, width, height, centerX, centerY + Gdx.graphics.getHeight(), true);
+	}
 
 	// ------------------------------------------------
 
 	protected boolean allowUserInput() {
-		return currentReversing.size() == 0 && !iterationMarker.isInterpolating() && !stepMarker.isInterpolating();
+		return currentReversing.size() == 0 
+				&& !iterationMarker.isInterpolating() 
+				&& !stepMarker.isInterpolating()
+				&& kbDisplay.isHidden();
 	}
 
 	public boolean shouldDrawStepMarker() {

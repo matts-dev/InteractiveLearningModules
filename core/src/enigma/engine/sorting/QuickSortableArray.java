@@ -1,5 +1,6 @@
 package enigma.engine.sorting;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Stack;
 
@@ -12,6 +13,9 @@ import com.badlogic.gdx.math.Vector2;
 
 import enigma.engine.Draggable;
 import enigma.engine.TextureLookup;
+import enigma.engine.utilities.KeybindDisplay;
+import enigma.engine.utilities.TextButton;
+import enigma.engine.utilities.Tuple2;
 
 public class QuickSortableArray extends SortableArray {
 	private static final Color pivotColor = new Color(Color.PURPLE);
@@ -49,8 +53,12 @@ public class QuickSortableArray extends SortableArray {
 	protected float intervalYOffset = 20f;
 	protected float intervalHeight = 5f;
 	protected Color intervalColor = new Color(Color.GRAY);
+	
 
-
+	/** Flag for special-cases/state. */
+	boolean didAtleastOneLowToHigh = false;
+	boolean atLeastOneCallHighToLow = false;
+	
 	public QuickSortableArray(float x, float y, float elementWidth, int numElements, int maxElementValue, int seed) {
 		super(x, y, elementWidth, numElements, maxElementValue, seed);
 		setDrawIterationMarker(true);
@@ -83,9 +91,16 @@ public class QuickSortableArray extends SortableArray {
 
 		instruction.setText("Pick a pivot.");
 	}
+	
+	@Override
+	protected void populateKeybindDisplay(ArrayList<Tuple2<String, String>> keyActionPairs) {
+		keyActionPairs.add(new Tuple2<String, String>("N", "New Short Array."));
+		keyActionPairs.add(new Tuple2<String, String>("B", "New Large Array."));
+		keyActionPairs.add(new Tuple2<String, String>("R", "Reverse Last Swap."));
+		keyActionPairs.add(new Tuple2<String, String>("Right Click", "Next Step / Check Move."));
+		keyActionPairs.add(new Tuple2<String, String>("ENTER", "Next Step / Check Move."));
+	}
 
-	boolean didAtleastOneLowToHigh = false;
-	boolean atLeastOneCallHighToLow = false;
 
 	/*
 	 * (non-Javadoc)
@@ -393,7 +408,6 @@ public class QuickSortableArray extends SortableArray {
 			sr.rect(lower.x, lower.y - intervalYOffset, higher.x - lower.x + elementWidth, intervalHeight);
 			sr.setColor(r, g, b, a);
 		}
-
 		super.draw(batch);
 	}
 
@@ -403,6 +417,7 @@ public class QuickSortableArray extends SortableArray {
 		lowMarker.logic();
 		highMarker.logic();
 		heightChecker.logic();
+
 	}
 
 	protected void IO() {
@@ -437,6 +452,12 @@ public class QuickSortableArray extends SortableArray {
 		}
 
 		instruction.draw(batch);
+	}
+	
+	@Override
+	public void drawPostSprites(SpriteBatch batch) {
+		super.drawPostSprites(batch);
+
 	}
 
 	@Override
@@ -875,7 +896,7 @@ public class QuickSortableArray extends SortableArray {
 
 		// check that they did not highlight elements below the stopping/swap point.
 		if (readyForNextStage) {
-			for (int idx = currentFrame.curLowIdx + 1; idx < currentFrame.maxRangeIndex
+			for (int idx = currentFrame.curLowIdx + 1; idx <= currentFrame.maxRangeIndex
 					&& idx <= currentFrame.curHighIdx; idx++) {
 				VisualColumn ele = elements.get(idx);
 				if (ele.shouldForceColorOverride()) {
