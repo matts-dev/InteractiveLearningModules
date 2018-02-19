@@ -83,6 +83,8 @@ public class SortableArray extends Positionable implements Touchable {
 	
 	protected boolean enterEvent = false;
 	protected KeybindDisplay kbDisplay;
+	
+	protected DrawableString seedDisplay;
 
 	/**
 	 * Create a visual representation of an array that allows swapping of elements.
@@ -107,6 +109,9 @@ public class SortableArray extends Positionable implements Touchable {
 		this.greenCheck.setPosition(Gdx.graphics.getWidth() / 2 - greenCheck.getWidth() / 2,
 				Gdx.graphics.getHeight() / 2);
 
+		//cap seed and make positive.
+		seed %= 10000;
+		seed = Math.abs(seed);
 		this.seed = seed;
 		rng = new Random(seed);
 
@@ -130,7 +135,11 @@ public class SortableArray extends Positionable implements Touchable {
 		instruction.startAnimation();
 		
 		generateKeybindDisplay();
-
+		
+		
+		seedDisplay = new DrawableString("S:" + seed);
+		seedDisplay.setXY(Gdx.graphics.getWidth() * 0.93f, Gdx.graphics.getHeight() * 0.05f);
+		
 	}
 
 	public SortableArray(SortableArray toClone) {
@@ -193,6 +202,8 @@ public class SortableArray extends Positionable implements Touchable {
 
 		iterationMoveHistory = new Stack<MoveHistoryEntry>();
 
+		
+		
 		// positional setup
 		setMarkerToPosition(iterationMarker, 0);
 		setPosition(x, y);
@@ -202,11 +213,13 @@ public class SortableArray extends Positionable implements Touchable {
 		instruction.startAnimation();
 		
 		generateKeybindDisplay();
-
+		
+		
+		seedDisplay = new DrawableString("");
 	}
 
 	protected Marker configureMarker(Color color) {
-		Marker sprite = new Marker(TextureLookup.arrowUpSmall);
+		Marker sprite = new Marker(TextureLookup.arrowUpSmall, 0.5f);
 		sprite.setColor(color);
 		sprite.setSize(elementWidth, sprite.getHeight());
 		return sprite;
@@ -307,9 +320,12 @@ public class SortableArray extends Positionable implements Touchable {
 	}
 
 	public void drawPreSprites(SpriteBatch batch) {
+		seedDisplay.draw(batch);
+		
 		if (shouldDrawStepMarker()) stepMarker.draw(batch);
 
 		if (shouldDrawIterationMarker()) iterationMarker.draw(batch);
+
 	}
 
 	public void drawPostSprites(SpriteBatch batch) {

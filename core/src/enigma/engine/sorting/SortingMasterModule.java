@@ -16,7 +16,9 @@ public class SortingMasterModule extends CourseModule {
 	 */
 	public SortingMasterModule(OrthographicCamera camera) {
 		super(camera);
-		subModules.add(new SortModule(camera));
+		//subModules.add(new SortModule(camera));
+		subModules.add(new QSortInstructionModule(camera));
+//		subModules.add(new QSortPracticeModule(camera));
 		loadCurrentModule();
 	}
 
