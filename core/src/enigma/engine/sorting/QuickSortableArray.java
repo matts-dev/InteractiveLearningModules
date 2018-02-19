@@ -8,13 +8,13 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 
 import enigma.engine.Draggable;
+import enigma.engine.GlobalStrings;
 import enigma.engine.TextureLookup;
-import enigma.engine.utilities.KeybindDisplay;
-import enigma.engine.utilities.TextButton;
 import enigma.engine.utilities.Tuple2;
 
 public class QuickSortableArray extends SortableArray {
@@ -43,17 +43,24 @@ public class QuickSortableArray extends SortableArray {
 
 
 	protected boolean allowPromptUpdate = true;
-	protected final String PIVOT_SELECT_PROMPT = "Pick a pivot.";
-	protected final String CACHE_PIVOT_PROMPT = "Move the pivot out of the way; swap it with an element.";
-	protected final String LOW_HIGH_PROMPT = "Scan right over elements smaller than pivot.";
-	protected final String HIGH_LOW_PROMPT = "Scan left over elements larger than pivot.";
-	protected final String SWAP_ELEMENTS_PROMPT = "Swap incorrectly positioned elements, if needed.";
-	protected final String POSITION_PIVOT_PROMPT = "Position the pivot back into the array.";
-
+	protected final String PIVOT_SELECT_PROMPT = "Pick the pivot in the middle of the region.";
+	protected final String CACHE_PIVOT_PROMPT = "Move the pivot out of the way; swap it with a left element.";
+	protected final String LOW_HIGH_PROMPT = "At the 'red' pointer, scan (label) rightward.";
+	protected final String HIGH_LOW_PROMPT = "At the 'blue' pointer, scan (label) leftward.";
+	protected final String SWAP_ELEMENTS_PROMPT = "Swap at the pointers (if needed).";
+	protected final String POSITION_PIVOT_PROMPT = "Position (unhide) the pivot back into the array.";
+	protected Sprite hidePivotIcon;
+	protected Sprite swapElementsIcon;
+	protected Sprite restorePivotIcon;
+	private boolean drawIcons = true;
+	
+	protected boolean forceHidePrompts = false;
+	protected boolean forceHideIcons = false;
+	
+	
 	protected float intervalYOffset = 20f;
 	protected float intervalHeight = 5f;
 	protected Color intervalColor = new Color(Color.GRAY);
-	
 
 	/** Flag for special-cases/state. */
 	boolean didAtleastOneLowToHigh = false;
@@ -72,7 +79,8 @@ public class QuickSortableArray extends SortableArray {
 		setDrawIterationMarker(false);
 		setDrawStepMarker(false);
 
-		instruction.setText("Pick a pivot.");
+		instruction.setText(PIVOT_SELECT_PROMPT);
+		configureIcons();
 	}
 
 	public QuickSortableArray(float x, float y, float elementWidth, int maxElementValue, int[] sourceArray) {
@@ -89,7 +97,8 @@ public class QuickSortableArray extends SortableArray {
 		setDrawIterationMarker(false);
 		setDrawStepMarker(false);
 
-		instruction.setText("Pick a pivot.");
+		instruction.setText(PIVOT_SELECT_PROMPT);
+		configureIcons();
 	}
 	
 	@Override
@@ -99,8 +108,28 @@ public class QuickSortableArray extends SortableArray {
 		keyActionPairs.add(new Tuple2<String, String>("R", "Reverse Last Swap."));
 		keyActionPairs.add(new Tuple2<String, String>("Right Click", "Next Step / Check Move."));
 		keyActionPairs.add(new Tuple2<String, String>("ENTER", "Next Step / Check Move."));
+		keyActionPairs.add(new Tuple2<String, String>("H", "Hide Instructions Challenge."));
+		keyActionPairs.add(new Tuple2<String, String>("J", "Hide Icons Challenge."));
+	}
+	
+	private void configureIcons() {
+		hidePivotIcon = new Sprite(TextureLookup.qsortHidePivotIcon);   
+		swapElementsIcon = new Sprite(TextureLookup.qsortSwapQmarkIcon);
+		restorePivotIcon = new Sprite(TextureLookup.qsortRestorePivotIcon);
+		
+		sizeAndPositionIcon(hidePivotIcon);
+		sizeAndPositionIcon(swapElementsIcon);
+		sizeAndPositionIcon(restorePivotIcon);
 	}
 
+	private void sizeAndPositionIcon(Sprite icon) {
+		float size = 32;
+		icon.setSize(size, size);
+		icon.setPosition(Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight() * 0.99f);
+		//icon.translate(-size/2, -size/2);
+		icon.translate(-size, -size);
+		icon.setAlpha(0.5f);
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -417,7 +446,18 @@ public class QuickSortableArray extends SortableArray {
 		lowMarker.logic();
 		highMarker.logic();
 		heightChecker.logic();
-
+		
+		if(stage == Stage.LOW_TO_HIGH_SCAN) {
+			lowMarker.setShouldFlash(true);
+			highMarker.setShouldFlash(false);
+		} else if (stage == Stage.HIGH_TO_LOW_SCAN) {
+			lowMarker.setShouldFlash(false);
+			highMarker.setShouldFlash(true);
+		}
+		else {
+			lowMarker.setShouldFlash(false);
+			highMarker.setShouldFlash(false);
+		}
 	}
 
 	protected void IO() {
@@ -436,6 +476,13 @@ public class QuickSortableArray extends SortableArray {
 				reverseLastMove();
 				reverseLastSolutionStep();
 			}
+			
+			if (Gdx.input.isKeyJustPressed(Input.Keys.H)) {
+				forceHidePrompts = !forceHidePrompts;
+			}
+			if (Gdx.input.isKeyJustPressed(Input.Keys.J)) {
+				forceHideIcons = !forceHideIcons;
+			}
 		}
 	}
 
@@ -446,12 +493,30 @@ public class QuickSortableArray extends SortableArray {
 		if (callStack.size() > 0) {
 			IndexInterval currentStackFrame = callStack.peek();
 			if (currentStackFrame != null && currentStackFrame.highAndLowMarkersPlaced) {
-				highMarker.draw(batch);
 				lowMarker.draw(batch);
+				highMarker.draw(batch);
 			}
 		}
 
-		instruction.draw(batch);
+		if(!forceHidePrompts) {
+			instruction.draw(batch);
+		}
+
+		if (drawIcons && !forceHideIcons) {
+			switch (stage) {
+			case CACHE_PIVOT:
+				hidePivotIcon.draw(batch);
+				break;
+			case SWAP:
+				swapElementsIcon.draw(batch);
+				break;
+			case POSITION_PIVOT:
+				restorePivotIcon.draw(batch);
+				break;
+			default:
+				break;
+			}
+		}
 	}
 	
 	@Override
@@ -510,7 +575,17 @@ public class QuickSortableArray extends SortableArray {
 
 			switch (stage) {
 			case PICK_PIVOT:
-				instruction.setText(PIVOT_SELECT_PROMPT);
+				if(callStack.size() == 0) {
+					//gwt does not like String.format(...) for some reason.
+					instruction.setText("Complete; press <space> for instructions.");
+				} else if (callStack.peek().maxRangeIndex == callStack.peek().minRangeIndex + 1) {
+					instruction.setText("Base Case: Swap the two elements if needed.");
+				}else if (callStack.peek().maxRangeIndex == callStack.peek().minRangeIndex) {
+					instruction.setText("Base Case: Only 1 element within array, select it.");
+				}  
+				else {
+					instruction.setText(PIVOT_SELECT_PROMPT);
+				}
 				break;
 			case CACHE_PIVOT:
 				instruction.setText(CACHE_PIVOT_PROMPT);

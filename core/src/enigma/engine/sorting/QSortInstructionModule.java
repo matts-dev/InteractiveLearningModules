@@ -13,12 +13,12 @@ import enigma.engine.CourseModule;
 import enigma.engine.Draggable;
 import enigma.engine.TextureLookup;
 
-enum SortType{SELECTION, INSERTION, QUICK}
+//enum SortType{SELECTION, INSERTION, QUICK}
 
-public class SortModule extends CourseModule {
+public class QSortInstructionModule extends CourseModule {
 	/** a vector to hold converted touch coordinates into game world coordinates */
 	//private Vector3 convertedTouchVect = new Vector3(0, 0, 0);
-	private boolean devMode = true;
+	private boolean devMode = false;
 	protected ShapeRenderer sr;
 	protected Draggable dragTarget = null;
 
@@ -37,7 +37,7 @@ public class SortModule extends CourseModule {
 	 * @param camera
 	 *            the Orthographic camera. This is used to convert points
 	 */
-	public SortModule(OrthographicCamera camera) {
+	public QSortInstructionModule(OrthographicCamera camera) {
 		super(camera);
 		sr = TextureLookup.shapeRenderer;
 //		rng = new Random();
@@ -47,6 +47,7 @@ public class SortModule extends CourseModule {
 		numElements = rng.nextInt(3) + 7;
 
 		createNewArray();
+		startTutorialManager();
 	}
 
 	private void createNewArray() {

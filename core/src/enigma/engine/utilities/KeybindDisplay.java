@@ -65,10 +65,10 @@ public class KeybindDisplay extends Entity implements Touchable{
 
 	private void recenter() {
 		//+number reserves extra space
-		int simulatedSize = keybinds.size() + 2;
+		int simulatedSize = keybinds.size() + 1;
 		float elementHeightAllowance = background.getHeight() / (simulatedSize);
 		
-		float heightDisplacement = 2 * keybinds.get(0).first.getHeight();
+		float heightDisplacement = 1.25f * keybinds.get(0).first.getHeight();
 		float quarterDisplacment = background.getWidth() * 0.25f;
 		float eigthDisplacement = quarterDisplacment * 0.5f;
 		
