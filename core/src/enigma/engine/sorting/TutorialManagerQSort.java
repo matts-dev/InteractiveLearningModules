@@ -85,6 +85,7 @@ public class TutorialManagerQSort extends TutorialManager {
 //		instructions.add(String.format("Press the %s button again to close the dialog.", GlobalStrings.showKeybindsButton));
 		
 		// Quicksort introduction
+		instructions.add("Welcome! Press enter to get started!");
 		instructions.add("Quicksort is among the fastest sorting algorithms");
 		instructions.add("The first step of Quicksort is to 'partition' the array.");
 		instructions.add("To partition, we select some pivot element within the array.");
@@ -253,7 +254,7 @@ public class TutorialManagerQSort extends TutorialManager {
 		instructions.add("I suggest letting the computer solve the first one...");
 		instructions.add("...it may help to see how it is done quickly.");
 		instructions.add("But after a few, try to solve the steps on your own.");
-		instructions.add("Remember, press 'space' at anytime to see keyboard shortcuts.");
+		instructions.add("Press 'space' at anytime to see keyboard shortcuts.");
 		instructions.add("Now, press 'N' for a normal array, or 'B' for a big array.");
 		
 		

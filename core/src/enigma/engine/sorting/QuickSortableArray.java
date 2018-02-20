@@ -13,7 +13,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 
 import enigma.engine.Draggable;
-import enigma.engine.GlobalStrings;
 import enigma.engine.TextureLookup;
 import enigma.engine.utilities.Tuple2;
 
