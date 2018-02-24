@@ -46,7 +46,7 @@ public class Game extends ApplicationAdapter implements InputProcessor {
 	}
 
 	private void setUpGameModules() {
-		game = new TheoryGameMainModule(camera);
+		game = new GameMainModule(camera);
 	}
 
 	@Override
