@@ -95,7 +95,7 @@ public class TutorialManagerQSort extends TutorialManager {
 		instructions.add("Click on the middle element to make it the pivot.");
 		
 		
-		instructions.add("Now, the purple element is now our pivot.");
+		instructions.add("Now, the purple element is our pivot.");
 		instructions.add("Our goal is to figure something out about the pivot...");
 		instructions.add("We want to figure out it's correct place in the sorted array.");
 		instructions.add("So, the center might be the wrong (sorted) pivot spot...");
@@ -129,10 +129,10 @@ public class TutorialManagerQSort extends TutorialManager {
 		instructions.add("...since it is smaller, it should be red too.");
 		instructions.add(show1LowPtrScanCmd);
 		instructions.add(moveLowPtrOnceCmd);
-		instructions.add("You try, click the next element to cycle colors.");
-		instructions.add("Don't actually think of this as color coding...");
+		instructions.add("You try, click the next element to color code it.");
+		instructions.add("But don't actually think of this as color coding...");
 		instructions.add("What we're really doing is sliding the red pointer.");
-		instructions.add("We're sliding it over smaller elements...");
+		instructions.add("We're sliding it passed smaller elements...");
 		instructions.add("...searching for a larger element.");
 		instructions.add("The red pointer's element is larger than the purple pivot...");
 		instructions.add("Since it is larger, we should label it blue.");
@@ -140,11 +140,11 @@ public class TutorialManagerQSort extends TutorialManager {
 		instructions.add("Continue clicking on the element until it is blue.");
 		
 		instructions.add("Here's where we change things up...");
-		instructions.add("...now we want to slide the blue pointer over larger elements.");
+		instructions.add("...now we want to slide the blue pointer passed larger elements.");
 		instructions.add("Essentially, it's looking for a smaller-than-pivot element");
 		instructions.add("Since the element at the blue pointer is larger...");
 		instructions.add(moveHighPtrOnceCmd);
-		instructions.add("... it needs to be blue; please cycle its colors to blue.");
+		instructions.add("... it needs to be blue; please change its color to blue.");
 		instructions.add("Now the blue pointer has found a smaller element!");
 		instructions.add(endHighPtrCmd);
 		instructions.add("Please label it red, since it is smaller than the pivot.");
@@ -179,13 +179,13 @@ public class TutorialManagerQSort extends TutorialManager {
 		
 		instructions.add("We've now completed our first partition!");
 		instructions.add("Quicksort is a recursive algorithm, ...");
-		instructions.add("... which means we recurse(repeat) on smaller sub-problems");
-		instructions.add("In this case, we have two smaller sub-problems, ...");
+		instructions.add("... which means we recurse(repeat) on smaller subproblems");
+		instructions.add("In this case, we have two smaller subproblems, ...");
 		instructions.add("...our two subproblems are beside our last pivot!");
 		instructions.add("So, let's repeat and partition on both sides of the old pivot.");
 		
 		instructions.add("Starting with the left half, we need a pivot.");
-		instructions.add("When two middle elements, choose left as the pivot.");
+		instructions.add("When there are two middle elements, choose the left.");
 		instructions.add(selectPivotCmd);
 		instructions.add("Above the left gray bar, pick the pivot (middle) element.");
 		
@@ -197,7 +197,7 @@ public class TutorialManagerQSort extends TutorialManager {
 		instructions.add(cachePivotCmd);
 		instructions.add("Now, hide the pivot on the far left (swap).");
 		
-		instructions.add("Now we need to mark elements red again...");
+		instructions.add("Now we need to label elements red again...");
 		instructions.add("... the first scan always starts at the red pointer...");
 		instructions.add("we mark elements red until reaching a bigger element");
 		instructions.add(endLowPtrCmd);
@@ -206,10 +206,10 @@ public class TutorialManagerQSort extends TutorialManager {
 		
 		instructions.add("Nice! now time to start our left scan...");
 		instructions.add("The second scan always starts at the blue pointer...");
-		instructions.add("...and moves right, marking blue elements...");
+		instructions.add("...and moves left, marking blue elements...");
 		instructions.add("...until it reaches a red element.");
 		instructions.add(endHighPtrCmd);
-		instructions.add("From blue pointer, mark larger elements blue.");
+		instructions.add("From blue pointer, label larger elements blue.");
 		
 		instructions.add("This time we don't need to swap the pointers...");
 		instructions.add("...the blue pointer has already passed the red pointer");
@@ -222,21 +222,22 @@ public class TutorialManagerQSort extends TutorialManager {
 		instructions.add("Remember, every time move the pivot out of hiding...");
 		instructions.add("...we move it to the spot of the blue pointer.");
 		instructions.add(repositionPvtCmd);
-		instructions.add("Now then, correctly position pivot into the subarray.");
+		instructions.add("Now then, correctly position pivot into the subproblem.");
 		instructions.add("We just completed another partitioning...");
-		instructions.add("...which means we are done with this sub-problem.");
+		instructions.add("...which means we are done with this subproblem.");
 		instructions.add("notice our new pivot split the region into two halves.");
-		instructions.add("Now we need to pick a pivot one of these halves.");
+		instructions.add("Now we need to pick a pivot one of these subproblems.");
 		
 		instructions.add("Notice the gray underline only covers 1 element.");
+		instructions.add("This means we have a subproblem size of 1.");
 		instructions.add("So, we only have 1 element to pick a pivot from...");
-		instructions.add("...which means this element is already correctly positioned.");
+		instructions.add("...which means this element is already correctly positioned!");
 		instructions.add("This is what we call a base case...");
 		instructions.add("Base cases are essentially the end the of recursion.");
 		instructions.add(baseCaseSelectCmd);
-		instructions.add("Please click the one element to mark purple.");
+		instructions.add("Please click the one element to label purple.");
 		
-		instructions.add("Now we only have two elements...");
+		instructions.add("Now we only have two elements above the gray bar...");
 		instructions.add("...which is another base case!");
 		instructions.add("Again, we don't need to recursively partition anymore.");
 		instructions.add("We only need to swap the two if they're out of order.");
