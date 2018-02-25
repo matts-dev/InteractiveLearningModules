@@ -38,6 +38,19 @@ public class DrawableString {
 		gl.setText(bmFont, text);
 		this.setText(text);
 	}
+	
+	public DrawableString(String text, boolean unchangingFont) {
+		// bmFont = new BitmapFont(Gdx.files.internal("prada.fnt"));
+		if(unchangingFont) {
+			bmFont = TextureLookup.ignoreBmInversionWhite;
+		} else {
+			bmFont = TextureLookup.whiteBMFont; 
+		}
+
+		gl = new GlyphLayout();
+		gl.setText(bmFont, text);
+		this.setText(text);
+	}
 
 	public void draw(SpriteBatch batch) {
 		if(bShouldShow)

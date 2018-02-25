@@ -14,7 +14,7 @@ public class TextButton extends LERPSprite implements Touchable{
 	
 	public TextButton(String text) {
 		super(TextureLookup.buttonBlack);
-		this.text = new DrawableString(text);
+		this.text = new DrawableString(text, true);
 		lastSwitchTime = System.currentTimeMillis();
 		
 		float txtWid = this.text.width();

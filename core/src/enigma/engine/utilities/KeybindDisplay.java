@@ -43,7 +43,7 @@ public class KeybindDisplay extends Entity implements Touchable{
 		keybinds = new ArrayList<Tuple2<TextButton,DrawableString>>();
 		for(Tuple2<String, String> pair : keyActionPairs) {
 			TextButton button = new TextButton(pair.first);
-			DrawableString action = new DrawableString(pair.second);
+			DrawableString action = new DrawableString(pair.second, true);
 			keybinds.add(new Tuple2<TextButton, DrawableString>(button, action));
 		}
 		
