@@ -57,18 +57,18 @@ public class TutorialManagerSelectSort extends TutorialManager {
 		// introduction
 		instructions.add("Welcome! Press enter to get started!");
 
-//		instructions.add("Selection sort is a general sorting algorithm...");
-//		instructions.add("The algorithm starts at the left-most location...");
-//		instructions.add("...see the gray pointer? That's the current location");
+		instructions.add("Selection sort is a general sorting algorithm...");
+		instructions.add("The algorithm starts at the left-most location...");
+		instructions.add("...see the gray pointer? That's the current location");
 		
-//		instructions.add("In sorting, we'd like the smallest element at this location");
+		instructions.add("In sorting, we'd like the smallest element at this location");
 		instructions.add("This algorithm scans right looking for the smallest element.");
 		instructions.add(stepElementCmd);
 		
 		instructions.add("The yellow pointer represents where we are at in the scan.");
 		instructions.add("Since this element is larger, let's just scan over it.");
 		instructions.add(stepElementCmd);
-		instructions.add("This element is smaller than gray pointer's element.");
+		instructions.add("This element is smaller than the gray pointer's element.");
 		instructions.add("Let's leave a marker there...");
 		instructions.add(enableMinSwapPtrCmd );
 		instructions.add("...the red marker shows the smallest element seen so far.");

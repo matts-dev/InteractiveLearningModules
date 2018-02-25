@@ -28,7 +28,6 @@ enum module
 
 public class GameMainModule extends CourseModule {
 	public static final module compileTimeModuleSetting = module.SELECTION_SORT_INSTRUCTION;
-	//public static final module compileTimeModuleSetting = module.QSORT_INSTRUCTION;
 	public GameMainModule(OrthographicCamera camera) {
 		super(camera);
 
@@ -56,10 +55,10 @@ public class GameMainModule extends CourseModule {
 
 			break;
 		case INSERT_SORT_INSTRUCTION:
+			subModules.add(new ISortInstructionModule(camera));
 
 			break;
 		case INSERT_SORT_PRACTICE:
-			subModules.add(new ISortInstructionModule(camera));
 			break;
 		case BINARY:
 			
