@@ -8,6 +8,7 @@ import enigma.engine.regex.MasterRegularExpressionModule;
 import enigma.engine.sorting.ISortInstructionModule;
 import enigma.engine.sorting.QSortInstructionModule;
 import enigma.engine.sorting.QSortPracticeModule;
+import enigma.engine.sorting.SelectSortInstructionModule;
 
 //@formatter:off
 enum module
@@ -26,7 +27,7 @@ enum module
 //@formatter:on
 
 public class GameMainModule extends CourseModule {
-	public static final module compileTimeModuleSetting = module.INSERT_SORT_PRACTICE;
+	public static final module compileTimeModuleSetting = module.SELECTION_SORT_INSTRUCTION;
 	//public static final module compileTimeModuleSetting = module.QSORT_INSTRUCTION;
 	public GameMainModule(OrthographicCamera camera) {
 		super(camera);
@@ -47,10 +48,9 @@ public class GameMainModule extends CourseModule {
 			break;
 		case QSORT_PRACTICE:
 			subModules.add(new QSortPracticeModule(camera));
-
 			break;
 		case SELECTION_SORT_INSTRUCTION:
-
+			subModules.add(new SelectSortInstructionModule(camera));
 			break;
 		case SELECTION_SORT_PRACTICE:
 
