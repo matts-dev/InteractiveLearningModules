@@ -1,17 +1,50 @@
 package enigma.engine.sorting;
 
+import java.util.ArrayList;
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import enigma.engine.Draggable;
 import enigma.engine.TextureLookup;
+import enigma.engine.utilities.Tuple2;
 
 public class InsertionSortableArray extends SortableArray{
+	boolean forceHidePrompts = false;
+	int[] cachedSourceArray;
 	
 	public InsertionSortableArray(float x, float y, float elementWidth, int numElements, int maxElementValue, int seed) {
 		super(x, y, elementWidth, numElements, maxElementValue, seed);
 		setDrawIterationMarker(true);
 		setDrawStepMarker(true);
+		instruction.setText("Insert (swap) the element left, if needed.");
 	}
+	
+	public InsertionSortableArray(float x, float y, float elementWidth, int maxElementValue, int[] sourceArray, boolean firstCall) {
+		super(x, y, elementWidth, maxElementValue, sourceArray);
+		
+		if(firstCall) {
+			overrideSolution = true;
+			cachedSourceArray = sourceArray;
+			solution = new InsertionSortableArray(x, y, elementWidth, maxElementValue, sourceArray, false);
+		}
+		
+		setDrawIterationMarker(true);
+		setDrawStepMarker(true);
+		instruction.setText("Insert (swap) the element left, if needed.");
+	}
+
+	@Override
+	public void drawPreSprites(SpriteBatch batch) {
+		super.drawPreSprites(batch);
+		
+		if(!forceHidePrompts) {
+			instruction.draw(batch);
+		}
+	}
+
+
 
 	@Override
 	public void draw(SpriteBatch batch) {
@@ -24,10 +57,14 @@ public class InsertionSortableArray extends SortableArray{
 	}
 
 	protected void IO() {
-		super.IO();
-
+		super.IO();		
+		
+		if(Gdx.input.isKeyJustPressed(Input.Keys.H)) {
+			forceHidePrompts = !forceHidePrompts;
+		}
 	}
 	
+
 
 	@Override
 	public VisualColumn attemptSwapWithOtherElement(Draggable draggedElement) {
@@ -40,6 +77,10 @@ public class InsertionSortableArray extends SortableArray{
 	@Override
 	protected boolean stepIndexComplete() {
 		if(stepIndex == 0) return true;
+		
+		if(!allowSolutionSolver) {
+			return false;
+		}
 		
 		if(stepIndex > 0 && stepIndex < elements.size()) {
 			//check left neighbor
@@ -81,6 +122,10 @@ public class InsertionSortableArray extends SortableArray{
 	protected void completeNextStep() {
 		if(stepIndex == 0) return;
 		
+		if(!allowSolutionSolver) {
+			return;
+		}
+		
 		if(stepIndex > 0 && stepIndex < elements.size()) {
 			//check left neighbor
 			VisualColumn step = elements.get(stepIndex);
@@ -105,9 +150,41 @@ public class InsertionSortableArray extends SortableArray{
 	
 	@Override
 	public void createSolutionArray(){
-		solution = new InsertionSortableArray(getX(), getY(), elementWidth, elements.size(), maxElementValue, seed);
+		if(!overrideSolution) {
+			solution = new InsertionSortableArray(getX(), getY(), elementWidth, elements.size(), maxElementValue, seed);
+		} else {
+			//int lastCorrectStep = solution.lastCorrectStep;
+			//solution = new InsertionSortableArray(getX(), getY(), elementWidth, maxElementValue, cachedSourceArray, false);
+			//solution.lastCorrectStep = lastCorrectStep;
+		}
+	}
+	
+	@Override
+	protected void populateKeybindDisplay(ArrayList<Tuple2<String, String>> keyActionPairs) {
+		keyActionPairs.add(new Tuple2<String, String>("N", "New Short Array."));
+		keyActionPairs.add(new Tuple2<String, String>("B", "New Large Array."));
+		//keyActionPairs.add(new Tuple2<String, String>("R", "Reverse Last Swap."));
+		keyActionPairs.add(new Tuple2<String, String>("ENTER", "Next Step / Check Move."));
+		keyActionPairs.add(new Tuple2<String, String>("H", "Hide Prompt Challenge."));
+		keyActionPairs.add(new Tuple2<String, String>("C", "Change Color Scheme."));
 	}
 
+
+
+	@Override
+	public TutorialManager getTutorialManager(float x, float y, float elementWidth, int numElements,
+			int maxElementValue) {
+		return new TutorialManagerISort(x, y, elementWidth, numElements, maxElementValue);
+	}
+
+
+	public void togglePromptUpdates(boolean showPracticePrompts) {
+		forceHidePrompts = showPracticePrompts;
+	}
+
+	public int getCurrentSwapIndex() {
+		return stepIndex;
+	}
 	
 }
 

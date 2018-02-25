@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import enigma.engine.floatingpoint.MasterFloatingPointModule;
 import enigma.engine.fsm.MasterFSMModule;
 import enigma.engine.regex.MasterRegularExpressionModule;
+import enigma.engine.sorting.ISortInstructionModule;
 import enigma.engine.sorting.QSortInstructionModule;
 import enigma.engine.sorting.QSortPracticeModule;
 
@@ -25,7 +26,8 @@ enum module
 //@formatter:on
 
 public class GameMainModule extends CourseModule {
-	public static final module compileTimeModuleSetting = module.QSORT_PRACTICE;
+	public static final module compileTimeModuleSetting = module.INSERT_SORT_PRACTICE;
+	//public static final module compileTimeModuleSetting = module.QSORT_INSTRUCTION;
 	public GameMainModule(OrthographicCamera camera) {
 		super(camera);
 
@@ -57,7 +59,7 @@ public class GameMainModule extends CourseModule {
 
 			break;
 		case INSERT_SORT_PRACTICE:
-
+			subModules.add(new ISortInstructionModule(camera));
 			break;
 		case BINARY:
 			
