@@ -48,6 +48,7 @@ public class SortableArray extends Positionable implements Touchable {
 	private ArrayList<VisualColumn> interpolating = new ArrayList<VisualColumn>();
 	protected Timer timer = new Timer();
 	protected String reverseTimeKey = "reverse";
+	protected boolean overrideSolution = false;
 
 	// Marks the current iteration
 	private boolean drawIterationMarker = false;
@@ -85,6 +86,10 @@ public class SortableArray extends Positionable implements Touchable {
 	protected KeybindDisplay kbDisplay;
 	
 	protected DrawableString seedDisplay;
+	protected boolean allowSolutionSolver = true;
+	
+	public boolean onlyAllowSingleSwap = false;
+	protected int swapsSinceCheck = 0;
 
 	/**
 	 * Create a visual representation of an array that allows swapping of elements.
@@ -406,6 +411,12 @@ public class SortableArray extends Positionable implements Touchable {
 		
 		boolean handled = false;
 		if (allowUserInput()) {
+			
+			//force user to do 1 swap per check
+			if(onlyAllowSingleSwap && swapsSinceCheck >= 1) {
+				return true;
+			}
+			
 			Tools.convertMousePointsIntoGameCoordinates(camera, convertedTouchVect);
 
 			for (VisualColumn element : elements) {
@@ -505,6 +516,7 @@ public class SortableArray extends Positionable implements Touchable {
 			VisualColumn displacedElement = elements.get(toIndex);
 			elements.set(fromIndex, displacedElement);
 			elements.set(toIndex, temp);
+			swapsSinceCheck += 1;
 
 			if (recordInHistory) {
 				swappedIndexCallback(fromIndex, toIndex);
@@ -656,6 +668,7 @@ public class SortableArray extends Positionable implements Touchable {
 					lastMovePlayer = false;
 				} else {
 					lastMovePlayer = !compareUserAgainstSolution();
+					swapsSinceCheck = 0;
 					
 					if(!lastMovePlayer) {
 						//if comparing against solution didn't update any animations (returns false),
@@ -672,7 +685,7 @@ public class SortableArray extends Positionable implements Touchable {
 		}
 	}
 
-	private int lastCorrectStep = 0;
+	protected int lastCorrectStep = 0;
 
 	/**
 	 * @return true if state is same as when method called; return false animation or update occurred.   
@@ -728,6 +741,8 @@ public class SortableArray extends Positionable implements Touchable {
 		if (solution.iterationMoveHistory.size() != iterationMoveHistory.size()) {
 			// undo a single wrong move
 			reverseUsersLastIncorrectMove();
+			//solution.reverseLastMove();
+			//solution.reverseLastSolutionStep();
 			return false;
 		}
 
@@ -737,8 +752,10 @@ public class SortableArray extends Positionable implements Touchable {
 			int userValue = elements.get(idx).getValue();
 
 			if (solutionValue != userValue) {
-				// solution is wrong
+				// user solution is wrong
 				reverseUsersLastIncorrectMove();
+				solution.reverseLastMove();
+				solution.reverseLastSolutionStep();
 				return false;
 			}
 		}
@@ -751,6 +768,8 @@ public class SortableArray extends Positionable implements Touchable {
 			if (solutionValue != userValue) {
 				// solution is wrong
 				reverseUsersLastIncorrectMove();
+				solution.reverseLastMove();
+				solution.reverseLastSolutionStep();
 				return false;
 			}
 		}
@@ -853,7 +872,16 @@ public class SortableArray extends Positionable implements Touchable {
 		throw new RuntimeException("The default array does not support get tutorialManager");
 	}
 
-	public void overrideInstructionTo(String string) {
-		throw new RuntimeException("Override Instruction Not Implemented");
+	public void overrideInstructionTo(String overrideText) {
+		this.instruction.setText(overrideText);
+		this.instruction.startAnimation();
+	}
+
+	public void setToggleSolutionSolver(boolean allowSolutionSolver) {
+		this.allowSolutionSolver = allowSolutionSolver;
+	}
+
+	public boolean instructionAnimating() {
+		return instruction.isAnimating();
 	}
 }

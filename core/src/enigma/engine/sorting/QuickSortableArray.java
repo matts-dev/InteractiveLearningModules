@@ -1255,10 +1255,6 @@ public class QuickSortableArray extends SortableArray {
 		return new TutorialManagerQSort(x, y, elementWidth, numElements, maxElementValue);
 	}
 
-	public boolean instructionAnimating() {
-		return instruction.isAnimating();
-	}
-
 	public void setToggleSolutionSolver(boolean enableOrDisable) {
 		allowStepSolver = enableOrDisable;
 	}
