@@ -666,6 +666,7 @@ public class SortableArray extends Positionable implements Touchable {
 				if (!lastMovePlayer || iterationMoveHistory.size() == 0) {
 					nextSolveStep(true);
 					lastMovePlayer = false;
+					swapsSinceCheck = 0;
 				} else {
 					lastMovePlayer = !compareUserAgainstSolution();
 					swapsSinceCheck = 0;
