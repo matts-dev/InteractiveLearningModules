@@ -106,6 +106,7 @@ public class QuickSortableArray extends SortableArray {
 		keyActionPairs.add(new Tuple2<String, String>("B", "New Large Array."));
 		keyActionPairs.add(new Tuple2<String, String>("R", "Reverse Last Swap."));
 		//keyActionPairs.add(new Tuple2<String, String>("Right Click", "Next Step / Check Move."));
+		keyActionPairs.add(new Tuple2<String, String>("C", "Change Color Scheme."));
 		keyActionPairs.add(new Tuple2<String, String>("ENTER", "Next Step / Check Move."));
 		keyActionPairs.add(new Tuple2<String, String>("H", "Hide Instructions Challenge."));
 		keyActionPairs.add(new Tuple2<String, String>("J", "Hide Icons Challenge."));
